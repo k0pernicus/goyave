@@ -79,8 +79,8 @@ Decode is a function to decode an entire string (which is the content of a given
 
 If the TOML content cannot be decoded, this function throw an error.
 */
-func Decode(data string, configurationFileContent *ConfigurationFile) {
-	if _, err := toml.Decode(data, configurationFileContent); err != nil {
+func Decode(data string, localStructure *ConfigurationFile) {
+	if _, err := toml.Decode(data, localStructure); err != nil {
 		log.Fatal(err)
 	}
 }
