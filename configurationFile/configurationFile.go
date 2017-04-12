@@ -58,7 +58,7 @@ The structure of a Group type is:
 		A list of git repositories id, tagged in the group.
 */
 type Group struct {
-	Name         string `toml:"name"`
+	Name         string
 	Repositories []string
 }
 
