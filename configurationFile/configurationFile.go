@@ -8,7 +8,6 @@ package configurationFile
 
 import (
 	"bytes"
-	"os"
 
 	"github.com/BurntSushi/toml"
 )
@@ -90,13 +89,4 @@ Encode is a function to encode a ConfigurationFile structure to a byffer of byte
 */
 func Encode(localStructure *ConfigurationFile, buffer *bytes.Buffer) error {
 	return toml.NewEncoder(buffer).Encode(localStructure)
-}
-
-/*
-Open returns a pointer for the configuration file.
-
-By default, the mod of this configuration file is 0755.
-*/
-func Open(configurationFilePath *string) (*os.File, error) {
-	return os.OpenFile(*configurationFilePath, os.O_RDWR|os.O_CREATE, 0755)
 }
