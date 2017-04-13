@@ -6,9 +6,12 @@ The global structure is ConfigurationFile, which is the simple way to store accu
 */
 package configurationFile
 
-import "github.com/BurntSushi/toml"
-import "log"
-import "bytes"
+import (
+	"bytes"
+	"os"
+
+	"github.com/BurntSushi/toml"
+)
 
 /*
 ConfigurationFile represents the TOML structure of the Goyave configuration file.
@@ -76,22 +79,24 @@ type LocalInformations struct {
 
 /*
 Decode is a function to decode an entire string (which is the content of a given TOML file) to a ConfigurationFile structure.
-
-If the TOML content cannot be decoded, this function throw an error.
 */
-func Decode(data string, localStructure *ConfigurationFile) {
-	if _, err := toml.Decode(data, localStructure); err != nil {
-		log.Fatal(err)
-	}
+func Decode(data string, localStructure *ConfigurationFile) error {
+	_, err := toml.Decode(data, localStructure)
+	return err
 }
 
 /*
 Encode is a function to encode a ConfigurationFile structure to a byffer of bytes.
-
-This function can throw an error if the TOML encoder failed.
 */
-func Encode(localStructure *ConfigurationFile, buffer *bytes.Buffer) {
-	if err := toml.NewEncoder(buffer).Encode(localStructure); err != nil {
-		log.Fatal(err)
-	}
+func Encode(localStructure *ConfigurationFile, buffer *bytes.Buffer) error {
+	return toml.NewEncoder(buffer).Encode(localStructure)
+}
+
+/*
+Open returns a pointer for the configuration file.
+
+By default, the mod of this configuration file is 0755.
+*/
+func Open(configurationFilePath *string) (*os.File, error) {
+	return os.OpenFile(*configurationFilePath, os.O_RDWR|os.O_CREATE, 0755)
 }
