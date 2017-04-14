@@ -5,9 +5,8 @@ import (
 	"os/user"
 )
 
-/*
-GetUserHomeDir returns the home directory of the current user.
-*/
+/*GetUserHomeDir returns the home directory of the current user.
+ */
 func GetUserHomeDir() string {
 	usr, err := user.Current()
 	// If the current user cannot be reached, get the HOME environment variable
