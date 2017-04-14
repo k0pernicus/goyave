@@ -12,5 +12,5 @@ const GitFileName = ".git"
 //// ERRORS ////
 ////////////////
 
-// Error when append an existing path repository in a list
+// RepositoryAlreadyExists is an error that append an existing path repository in a list
 const RepositoryAlreadyExists = "REPOSITORY_ALREADY_EXISTS"
