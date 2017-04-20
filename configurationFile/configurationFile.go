@@ -48,8 +48,8 @@ func Default() *ConfigurationFile {
 	return &ConfigurationFile{
 		Author: usr.Username,
 		Local: LocalInformations{
-			DefaultEntry: consts.VisibleFlag,
-			Group:        utils.GetLocalhost(),
+			DefaultTarget: consts.VisibleFlag,
+			Group:         utils.GetLocalhost(),
 		},
 	}
 }
@@ -58,11 +58,11 @@ func Default() *ConfigurationFile {
  *This methods returns HiddenFlag, or VisibleFlag
  */
 func (c *ConfigurationFile) GetDefaultEntry() (string, error) {
-	defaultEntry := c.Local.DefaultEntry
-	if defaultEntry != consts.VisibleFlag && defaultEntry != consts.HiddenFlag {
-		return consts.VisibleFlag, fmt.Errorf("the default entry is not set to %s or %s. Please check your configuration file", consts.HiddenFlag, consts.VisibleFlag)
+	defaultTarget := c.Local.DefaultTarget
+	if defaultTarget != consts.VisibleFlag && defaultTarget != consts.HiddenFlag {
+		return consts.VisibleFlag, fmt.Errorf("the default target is not set to %s or %s. Please check your configuration file", consts.HiddenFlag, consts.VisibleFlag)
 	}
-	return defaultEntry, nil
+	return defaultTarget, nil
 }
 
 /*AddRepository will add a single path in the TOML's target if the path does not exists.
@@ -162,8 +162,8 @@ type Group struct {
  *		The current group name.
  */
 type LocalInformations struct {
-	DefaultEntry string
-	Group        string
+	DefaultTarget string
+	Group         string
 }
 
 /*DecodeString is a function to decode an entire string (which is the content of a given TOML file) to a ConfigurationFile structure.
