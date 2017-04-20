@@ -15,3 +15,14 @@ func GetUserHomeDir() string {
 	}
 	return usr.HomeDir
 }
+
+/*GetLocalhost returns the localhost name of the current computer.
+ *If there is an error, it returns a default string.
+ */
+func GetLocalhost() string {
+	lhost, err := os.Hostname()
+	if err != nil {
+		return "DefaultHostname"
+	}
+	return lhost
+}
