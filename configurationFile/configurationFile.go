@@ -57,7 +57,7 @@ func Default() *ConfigurationFile {
  */
 func (c *ConfigurationFile) GetDefaultEntry() (string, error) {
 	defaultEntry := c.Local.DefaultEntry
-	if defaultEntry != consts.VisibleFlag || defaultEntry != consts.HiddenFlag {
+	if defaultEntry != consts.VisibleFlag && defaultEntry != consts.HiddenFlag {
 		return consts.VisibleFlag, fmt.Errorf("the default entry is not set to %s or %s. Please check your configuration file", consts.HiddenFlag, consts.VisibleFlag)
 	}
 	return defaultEntry, nil
