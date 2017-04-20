@@ -14,6 +14,8 @@ import (
 
 	"os/user"
 
+	"os"
+
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/consts"
 	"github.com/k0pernicus/goyave/utils"
@@ -126,6 +128,15 @@ func (c *ConfigurationFile) addHiddenRepository(path string) error {
 type GitRepository struct {
 	Name string
 	Path string
+}
+
+/*isExists check if the current path of the git repository is correct or not,
+ *and if the current repository exists again or not.
+ *This methods returns a boolean value.
+ */
+func (g *GitRepository) isExists() bool {
+	_, err := os.Stat(g.Path)
+	return os.IsNotExist(err)
 }
 
 /*Group represents a group of git repositories.
