@@ -168,15 +168,15 @@ type LocalInformations struct {
 
 /*DecodeString is a function to decode an entire string (which is the content of a given TOML file) to a ConfigurationFile structure.
  */
-func (c *ConfigurationFile) DecodeString(data string) error {
-	_, err := toml.Decode(data, c)
+func DecodeString(c *ConfigurationFile, data string) error {
+	_, err := toml.Decode(data, *c)
 	return err
 }
 
 /*DecodeBytesArray is a function to decode an entire string (which is the content of a given TOML file) to a ConfigurationFile structure.
  */
-func (c *ConfigurationFile) DecodeBytesArray(data []byte) error {
-	_, err := toml.Decode(string(data[:]), c)
+func DecodeBytesArray(c *ConfigurationFile, data []byte) error {
+	_, err := toml.Decode(string(data[:]), *c)
 	return err
 }
 
