@@ -2,6 +2,12 @@
  */
 package consts
 
+// VisibleFlag is the constant given for a visible repository
+const VisibleFlag = "VISIBLE"
+
+// HiddenFlag is the constant given for an hidden repository
+const HiddenFlag = "HIDDEN"
+
 // ConfigurationFileName is the configuration file name of Goyave
 const ConfigurationFileName = ".goyave"
 
