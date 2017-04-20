@@ -23,25 +23,20 @@ var (
  */
 func InitTraces(debugHandle io.Writer, errorHandle io.Writer, infoHandle io.Writer, warningHandle io.Writer) {
 
-	blue := color.New(color.FgBlue).SprintFunc()
-	cyan := color.New(color.FgCyan).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
-
 	/*Initialize the debug field
 	 */
-	DebugTracer = log.New(debugHandle, blue("DEBUG: "), log.Ldate|log.Ltime|log.Lshortfile)
+	DebugTracer = log.New(debugHandle, color.BlueString("DEBUG: "), log.Ldate|log.Ltime|log.Lshortfile)
 
 	/*Initialize the error field
 	 */
-	ErrorTracer = log.New(errorHandle, red("ERROR: "), log.Ldate|log.Ltime|log.Lshortfile)
+	ErrorTracer = log.New(errorHandle, color.RedString("ERROR: "), log.Ldate|log.Ltime|log.Lshortfile)
 
 	/*Initialize the info field
 	 */
-	InfoTracer = log.New(infoHandle, cyan("INFO: "), log.Ldate|log.Ltime|log.Lshortfile)
+	InfoTracer = log.New(infoHandle, color.CyanString("INFO: "), log.Ldate|log.Ltime|log.Lshortfile)
 
 	/*Initialize the warning field
 	 */
-	WarningTracer = log.New(warningHandle, yellow("WARNING: "), log.Ldate|log.Ltime|log.Lshortfile)
+	WarningTracer = log.New(warningHandle, color.YellowString("WARNING: "), log.Ldate|log.Ltime|log.Lshortfile)
 
 }
