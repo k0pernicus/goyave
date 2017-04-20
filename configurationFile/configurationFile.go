@@ -74,7 +74,7 @@ func (c *ConfigurationFile) AddRepository(path string, target string) error {
 	if target == consts.HiddenFlag {
 		return c.addHiddenRepository(path)
 	}
-	return errors.New("The target does not exists.")
+	return errors.New("the target does not exists")
 }
 
 /*addVisibleRepository adds a given git repo path as a visible repository
