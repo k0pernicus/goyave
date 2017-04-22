@@ -96,11 +96,12 @@ func (g *GitObject) getDiffWithWT() (*git.Diff, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Get the default diff options
+	// Get the default diff options, and add it custom flags
 	defaultDiffOptions, err := git.DefaultDiffOptions()
 	if err != nil {
 		return nil, err
 	}
+	defaultDiffOptions.Flags = defaultDiffOptions.Flags | git.DiffIncludeUntracked | git.DiffIncludeTypeChange
 	// Check the difference between the working directory and the index
 	diff, err := g.repository.DiffIndexToWorkdir(currentIndex, &defaultDiffOptions)
 	if err != nil {
@@ -130,17 +131,17 @@ func (g *GitObject) printChanges() error {
 			oldFile := delta.OldFile.Path
 			switch currentStatus {
 			case git.DeltaAdded:
-				fmt.Printf("\t===> %s has been added!\n", newFile)
+				fmt.Printf("\t===> %s has been added!\n", color.MagentaString(newFile))
 			case git.DeltaDeleted:
-				fmt.Printf("\t===> %s has been deleted!\n", newFile)
+				fmt.Printf("\t===> %s has been deleted!\n", color.MagentaString(newFile))
 			case git.DeltaModified:
-				fmt.Printf("\t===> %s has been modified!\n", newFile)
+				fmt.Printf("\t===> %s has been modified!\n", color.MagentaString(newFile))
 			case git.DeltaRenamed:
-				fmt.Printf("\t===> %s has been renamed to %s!\n", oldFile, newFile)
+				fmt.Printf("\t===> %s has been renamed to %s!\n", color.MagentaString(oldFile), color.MagentaString(newFile))
 			case git.DeltaUntracked:
-				fmt.Printf("\t===> %s is untracked - please to add it or update the gitignore file!\n", newFile)
+				fmt.Printf("\t===> %s is untracked - please to add it or update the gitignore file!\n", color.MagentaString(newFile))
 			case git.DeltaTypeChange:
-				fmt.Printf("\t===> the type of %s has been changed from %d to %d!", newFile, delta.OldFile.Mode, delta.NewFile.Mode)
+				fmt.Printf("\t===> the type of %s has been changed from %d to %d!", color.MagentaString(newFile), delta.OldFile.Mode, delta.NewFile.Mode)
 			}
 		}
 	}
