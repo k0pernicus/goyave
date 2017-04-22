@@ -34,17 +34,6 @@ var fileStateToString = map[git.Status]string{
 	git.StatusWtRenamed:    "Renamed file in your working tree!",
 }
 
-// TODO: Update this map enum to string in map enum to function!
-// Each of those enums must correspond to a function.
-var deltaFileStateToString = map[git.Delta]string{
-	git.DeltaAdded:      "Just added!",
-	git.DeltaDeleted:    "Just deleted!",
-	git.DeltaModified:   "Just modified!",
-	git.DeltaRenamed:    "Just renamed!",
-	git.DeltaUntracked:  "Untracked!",
-	git.DeltaTypeChange: "Type file has been changed!",
-}
-
 /*Global variable to set the StatusOption parameter, in order to list each file status
  */
 var statusOption = git.StatusOptions{
@@ -133,15 +122,26 @@ func (g *GitObject) printChanges() error {
 		return err
 	}
 	if numDeltas > 0 {
+		fmt.Printf("%s %s\t[%d modification(s)]\n", color.RedString("/!\\"), g.path, numDeltas)
 		for i := 0; i < numDeltas; i++ {
 			delta, _ := diff.GetDelta(i)
 			currentStatus := delta.Status
 			newFile := delta.NewFile.Path
-			fmt.Printf("%s [%s]\n\t%s: %s\n",
-				color.RedString("/!\\"),
-				g.path,
-				newFile,
-				deltaFileStateToString[currentStatus])
+			oldFile := delta.OldFile.Path
+			switch currentStatus {
+			case git.DeltaAdded:
+				fmt.Printf("\t===> %s has been added!\n", newFile)
+			case git.DeltaDeleted:
+				fmt.Printf("\t===> %s has been deleted!\n", newFile)
+			case git.DeltaModified:
+				fmt.Printf("\t===> %s has been modified!\n", newFile)
+			case git.DeltaRenamed:
+				fmt.Printf("\t===> %s has been renamed to %s!\n", oldFile, newFile)
+			case git.DeltaUntracked:
+				fmt.Printf("\t===> %s is untracked - please to add it or update the gitignore file!\n", newFile)
+			case git.DeltaTypeChange:
+				fmt.Printf("\t===> the type of %s has been changed from %d to %d!", newFile, delta.OldFile.Mode, delta.NewFile.Mode)
+			}
 		}
 	}
 	return nil
