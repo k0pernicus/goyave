@@ -18,6 +18,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/consts"
+	"github.com/k0pernicus/goyave/gitManip"
 	"github.com/k0pernicus/goyave/utils"
 )
 
@@ -120,14 +121,33 @@ func (c *ConfigurationFile) addHiddenRepository(path string) error {
 /*GitRepository represents the structure of a local git repository.
  *
  *Properties of this structure are:
+ *	GitObject:
+ *		A reference to a git structure that represents the repository.
  *	Name:
  * 		The custom name of the repository.
  *	Path:
  *		The path of the repository.
  */
 type GitRepository struct {
-	Name string
-	Path string
+	GitObject *gitManip.GitObject
+	Name      string
+	Path      string
+}
+
+/*NewGitRepository instantiates the GitRepository struct, based on the path information.
+ */
+func NewGitRepository(name, path string) *GitRepository {
+	return &GitRepository{
+		GitObject: gitManip.New(path),
+		Name:      name,
+		Path:      path,
+	}
+}
+
+/*Init (re)initializes the GitObject structure
+ */
+func (g *GitRepository) Init() {
+	g.GitObject = gitManip.New(g.Path)
 }
 
 /*isExists check if the current path of the git repository is correct or not,
