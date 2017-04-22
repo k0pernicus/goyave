@@ -70,6 +70,7 @@ func main() {
 	}
 	// For each VISIBLE repository, get some informations about his state and display it
 	for _, gitStruct := range configurationFileStructure.VisibleRepositories {
+		// Add those instruction in goroutines
 		gitStruct.Init()
 		gitStruct.GitObject.Status()
 	}
