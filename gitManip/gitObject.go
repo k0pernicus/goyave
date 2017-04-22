@@ -24,12 +24,7 @@ var repositoryStateToString = map[git.RepositoryState]string{
 }
 
 var fileStateToString = map[git.Status]string{
-	// git.StatusCurrent:         "Current",
-	git.StatusIndexNew: "You forgot to commit a new file!",
-	// git.StatusIndexModified:   "You forgot to commit a modified file!",
-	// git.StatusIndexDeleted:    "You forgot to commit that you deleted a file!",
-	// git.StatusIndexRenamed:    "You forgot to commit the renaming of a file!",
-	// git.StatusIndexTypeChange: "You forget to commit a type change!",
+	git.StatusIndexNew:     "You forgot to commit a new file!",
 	git.StatusIgnored:      "Ignored",
 	git.StatusConflicted:   "Conflicted",
 	git.StatusWtNew:        "New file in your working tree!",
@@ -37,6 +32,17 @@ var fileStateToString = map[git.Status]string{
 	git.StatusWtDeleted:    "Deleted file in your working tree!",
 	git.StatusWtTypeChange: "Type change detected in your working tree!",
 	git.StatusWtRenamed:    "Renamed file in your working tree!",
+}
+
+// TODO: Update this map enum to string in map enum to function!
+// Each of those enums must correspond to a function.
+var deltaFileStateToString = map[git.Delta]string{
+	git.DeltaAdded:      "Just added!",
+	git.DeltaDeleted:    "Just deleted!",
+	git.DeltaModified:   "Just modified!",
+	git.DeltaRenamed:    "Just renamed!",
+	git.DeltaUntracked:  "Untracked!",
+	git.DeltaTypeChange: "Type file has been changed!",
 }
 
 /*Global variable to set the StatusOption parameter, in order to list each file status
@@ -86,19 +92,64 @@ func (g *GitObject) isAccessible() bool {
  */
 func (g *GitObject) Status() {
 	if g.isAccessible() {
-		g.getUntrackedFiles()
-		// g.getDiffWithWT()
+		if err := g.printChanges(); err != nil {
+			color.RedString("Impossible to get stats from %s, due to error %s", g.path, err)
+		}
 	}
 }
 
-// func (g *GitObject) getDiffWithWT() {
-// 	currentIndex, err := git.OpenIndex(path.Join(g.path, ".git/"))
-// 	if err != nil {
-// 		fmt.Println("Error using last index: %s", err)
-// 	}
-// 	diff, err := g.repository.DiffIndexToWorkdir(*currentIndex)
-// }
+/*getDiffWithWT returns the difference between the working tree and the index, for the current git repository.
+ *If there is an error processing the request, it returns an error.
+ */
+func (g *GitObject) getDiffWithWT() (*git.Diff, error) {
+	// Get the index of the repository
+	currentIndex, err := g.repository.Index()
+	if err != nil {
+		return nil, err
+	}
+	// Get the default diff options
+	defaultDiffOptions, err := git.DefaultDiffOptions()
+	if err != nil {
+		return nil, err
+	}
+	// Check the difference between the working directory and the index
+	diff, err := g.repository.DiffIndexToWorkdir(currentIndex, &defaultDiffOptions)
+	if err != nil {
+		return nil, err
+	}
+	return diff, nil
+}
 
+/*printChanges prints out all changes for the current git repository.
+ *If there is an error processing the request, it returns this one.
+ */
+func (g *GitObject) printChanges() error {
+	diff, err := g.getDiffWithWT()
+	if err != nil {
+		return err
+	}
+	numDeltas, err := diff.NumDeltas()
+	if err != nil {
+		return err
+	}
+	if numDeltas > 0 {
+		for i := 0; i < numDeltas; i++ {
+			delta, _ := diff.GetDelta(i)
+			currentStatus := delta.Status
+			newFile := delta.NewFile.Path
+			fmt.Printf("%s [%s]\n\t%s: %s\n",
+				color.RedString("/!\\"),
+				g.path,
+				newFile,
+				deltaFileStateToString[currentStatus])
+		}
+	}
+	return nil
+}
+
+/*getUntrackedFiles is an old version of a tracking function for Goyave.
+ *It is already deprecated.
+ */
 func (g *GitObject) getUntrackedFiles() {
 	fmt.Printf("[%s]...", g.path)
 	if untrackedFields, err := g.repository.StatusList(&statusOption); err == nil {
