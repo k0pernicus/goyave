@@ -8,6 +8,45 @@ import (
 	git "gopkg.in/libgit2/git2go.v24"
 )
 
+/*Map to match the RepositoryState enum type with a string
+ */
+var repositoryStateToString = map[git.RepositoryState]string{
+	git.RepositoryStateNone:                 "None",
+	git.RepositoryStateMerge:                "Merge",
+	git.RepositoryStateRevert:               "Revert",
+	git.RepositoryStateCherrypick:           "Cherrypick",
+	git.RepositoryStateBisect:               "Bisect",
+	git.RepositoryStateRebase:               "Rebase",
+	git.RepositoryStateRebaseInteractive:    "Rebase Interactive",
+	git.RepositoryStateRebaseMerge:          "Rebase Merge",
+	git.RepositoryStateApplyMailbox:         "Apply Mailbox",
+	git.RepositoryStateApplyMailboxOrRebase: "Apply Mailbox or Rebase",
+}
+
+var fileStateToString = map[git.Status]string{
+	// git.StatusCurrent:         "Current",
+	git.StatusIndexNew: "You forgot to commit a new file!",
+	// git.StatusIndexModified:   "You forgot to commit a modified file!",
+	// git.StatusIndexDeleted:    "You forgot to commit that you deleted a file!",
+	// git.StatusIndexRenamed:    "You forgot to commit the renaming of a file!",
+	// git.StatusIndexTypeChange: "You forget to commit a type change!",
+	git.StatusIgnored:      "Ignored",
+	git.StatusConflicted:   "Conflicted",
+	git.StatusWtNew:        "New file in your working tree!",
+	git.StatusWtModified:   "Modified file in your working tree!",
+	git.StatusWtDeleted:    "Deleted file in your working tree!",
+	git.StatusWtTypeChange: "Type change detected in your working tree!",
+	git.StatusWtRenamed:    "Renamed file in your working tree!",
+}
+
+/*Global variable to set the StatusOption parameter, in order to list each file status
+ */
+var statusOption = git.StatusOptions{
+	Show:     git.StatusShowIndexAndWorkdir,
+	Flags:    git.StatusOptIncludeUntracked,
+	Pathspec: []string{},
+}
+
 /*GitObject contains informations about the current git repository
  *
  *The structure is:
@@ -35,6 +74,9 @@ func New(path string) *GitObject {
 	return &GitObject{accessible: err, path: path, repository: *r}
 }
 
+/*isAccesible returns the information that is the current git repository is existing or not.
+ *This method returns a boolean value: true if the git repository is still accesible (still exists), or false if not.
+ */
 func (g *GitObject) isAccessible() bool {
 	return g.accessible == nil
 }
@@ -44,7 +86,32 @@ func (g *GitObject) isAccessible() bool {
  */
 func (g *GitObject) Status() {
 	if g.isAccessible() {
-		fmt.Printf("The status of %s is: %s\n", g.path, g.repository.State())
+		g.getUntrackedFiles()
+		// g.getDiffWithWT()
+	}
+}
+
+// func (g *GitObject) getDiffWithWT() {
+// 	currentIndex, err := git.OpenIndex(path.Join(g.path, ".git/"))
+// 	if err != nil {
+// 		fmt.Println("Error using last index: %s", err)
+// 	}
+// 	diff, err := g.repository.DiffIndexToWorkdir(*currentIndex)
+// }
+
+func (g *GitObject) getUntrackedFiles() {
+	fmt.Printf("[%s]...", g.path)
+	if untrackedFields, err := g.repository.StatusList(&statusOption); err == nil {
+		count, _ := untrackedFields.EntryCount()
+		if count == 0 {
+			fmt.Println(color.GreenString("\tOK!"))
+			return
+		}
+		fmt.Printf(color.RedString("\t%d untracked files!\n", count))
+		for i := 0; i < count; i++ {
+			statusEntry, _ := untrackedFields.ByIndex(i)
+			fmt.Printf("\t%s\n", fileStateToString[statusEntry.Status])
+		}
 	}
 }
 
