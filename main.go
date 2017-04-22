@@ -7,8 +7,6 @@ import (
 	"os"
 	"path"
 
-	"fmt"
-
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/configurationFile"
 	"github.com/k0pernicus/goyave/consts"
@@ -59,17 +57,23 @@ func main() {
 	if _, err = toml.Decode(string(bytesArray[:]), &configurationFileStructure); err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(configurationFileStructure)
 	// Get all git paths, and display them
 	gitPaths, err := walk.RetrieveGitRepositories(userHomeDir)
 	if err != nil {
 		log.Fatalf("There was an error retrieving your git repositories: '%s'\n", err)
 	}
+	// For each git repository, check if it exists, and if not add it to the default target visibility
 	for _, gitPath := range gitPaths {
 		if err := configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget); err != nil {
 			traces.WarningTracer.Printf("[%s] %s", gitPath, err)
 		}
 	}
+	// For each VISIBLE repository, get some informations about his state and display it
+	for _, gitStruct := range configurationFileStructure.VisibleRepositories {
+		gitStruct.Init()
+		gitStruct.GitObject.Status()
+	}
+	// Save all new changes
 	var outputBuffer bytes.Buffer
 	if err := configurationFileStructure.Encode(&outputBuffer); err != nil {
 		log.Fatalln("Cannot save the current configurationFile structure!")
