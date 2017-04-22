@@ -148,25 +148,6 @@ func (g *GitObject) printChanges() error {
 	return nil
 }
 
-/*getUntrackedFiles is an old version of a tracking function for Goyave.
- *It is already deprecated.
- */
-func (g *GitObject) getUntrackedFiles() {
-	fmt.Printf("[%s]...", g.path)
-	if untrackedFields, err := g.repository.StatusList(&statusOption); err == nil {
-		count, _ := untrackedFields.EntryCount()
-		if count == 0 {
-			fmt.Println(color.GreenString("\tOK!"))
-			return
-		}
-		fmt.Printf(color.RedString("\t%d untracked files!\n", count))
-		for i := 0; i < count; i++ {
-			statusEntry, _ := untrackedFields.ByIndex(i)
-			fmt.Printf("\t%s\n", fileStateToString[statusEntry.Status])
-		}
-	}
-}
-
 /*List lists the path and the accessibility of a list of git repositories
  */
 func List(repositories *[]GitObject) {
