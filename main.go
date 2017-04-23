@@ -77,6 +77,8 @@ func main() {
 		},
 	}
 
+	/*addCmd is a subcommand to add the current working directory as a VISIBLE one
+	 */
 	var addCmd = &cobra.Command{
 		Use:   "add",
 		Short: "Add the current path as a VISIBLE repository",
@@ -89,6 +91,7 @@ func main() {
 			if !utils.IsGitRepository(currentDir) {
 				log.Fatalf("%s is not a git repository!\n", currentDir)
 			}
+			// If the path is/contains a .git directory, add this one as a VISIBLE repository
 			if err := configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag); err != nil {
 				traces.WarningTracer.Printf("[%s] %s\n", currentDir, err)
 			}
