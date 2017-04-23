@@ -8,8 +8,7 @@ import (
 	"github.com/k0pernicus/goyave/traces"
 )
 
-/*
- *RetrieveGitRepositories returns an array of strings, which represent paths to git repositories.
+/*RetrieveGitRepositories returns an array of strings, which represent paths to git repositories.
  *Also, this function returns an error type, that is corresponding to the Walk function behaviour (ok or not).
  */
 func RetrieveGitRepositories(rootpath string) ([]string, error) {
