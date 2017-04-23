@@ -87,7 +87,6 @@ func (c *ConfigurationFile) GetDefaultEntry() (string, error) {
 }
 
 /*AddRepository will add a single path in the TOML's target if the path does not exists.
- *
  *This method uses both methods addVisibleRepository and addHiddenRepository.
  */
 func (c *ConfigurationFile) AddRepository(path string, target string) error {
@@ -100,8 +99,7 @@ func (c *ConfigurationFile) AddRepository(path string, target string) error {
 	return errors.New("the target does not exists")
 }
 
-/*addVisibleRepository adds a given git repo path as a visible repository
- *
+/*addVisibleRepository adds a given git repo path as a visible repository.
  *If the repository already exists in the VisibleRepository field, the method throws an error: RepositoryAlreadyExists.
  *Else, the repository is append to the VisibleRepository field, and the method returns nil.
  */
@@ -119,8 +117,7 @@ func (c *ConfigurationFile) addVisibleRepository(path string) error {
 	return nil
 }
 
-/*addHiddenRepository adds a given git repo path as an hidden repository
- *
+/*addHiddenRepository adds a given git repo path as an hidden repository.
  *If the repository already exists in the HiddenRepository field, the method throws an error: RepositoryAlreadyExists.
  *Else, the repository is append to the HiddenRepository field, and the method returns nil.
  */
