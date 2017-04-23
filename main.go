@@ -50,12 +50,16 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
 
 func main() {
 
+	/*rootCmd defines the global app, and some actions to run before and after the command running
+	 */
 	var rootCmd = &cobra.Command{
 		Use:   "goyave",
 		Short: "Goyave is a tool to take a look at your local git repositories",
+		// Initialize the structure
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initialize(&configurationFileStructure)
 		},
+		// Save the current configuration file structure, in the configuration file
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			var outputBuffer bytes.Buffer
 			if err := configurationFileStructure.Encode(&outputBuffer); err != nil {
@@ -67,24 +71,11 @@ func main() {
 		},
 	}
 
-	/*stateCmd is a subcommand to list the state of each local git repository
-	 */
-	var stateCmd = &cobra.Command{
-		Use:   "state",
-		Short: "Get the state of each local git repository",
-		Run: func(cmd *cobra.Command, args []string) {
-			for _, gitStruct := range configurationFileStructure.VisibleRepositories {
-				gitStruct.Init()
-				gitStruct.GitObject.Status()
-			}
-		},
-	}
-
 	/*crawlCmd is a subcommand to crawl your hard drive in order to get and save new git repositories
 	 */
 	var crawlCmd = &cobra.Command{
 		Use:   "crawl",
-		Short: "Crawl the hard drive in order to find new git repositories",
+		Short: "Crawl the hard drive in order to find git repositories",
 		Run: func(cmd *cobra.Command, args []string) {
 			//		Get all git paths, and display them
 			gitPaths, err := walk.RetrieveGitRepositories(userHomeDir)
@@ -101,12 +92,23 @@ func main() {
 		},
 	}
 
+	/*stateCmd is a subcommand to list the state of each local git repository
+	 */
+	var stateCmd = &cobra.Command{
+		Use:   "state",
+		Short: "Get the state of each local git repository",
+		Run: func(cmd *cobra.Command, args []string) {
+			for _, gitStruct := range configurationFileStructure.VisibleRepositories {
+				gitStruct.Init()
+				gitStruct.GitObject.Status()
+			}
+		},
+	}
+
 	rootCmd.AddCommand(crawlCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
-	// // Save all new changes
 }
