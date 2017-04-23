@@ -17,26 +17,29 @@ This is the structure of this configuration file:
 
 ```TOML
 # The name of the user - typically the name of your session account
-Author = your_session_account
+Author = yourSessionAccount
 
 # Some local informations
 [local]
     # The target to store new git repositories
+    # Available properties are:
+    # * "VISIBLE" - Store each new git repository as a _VISIBLE_ repository
+    # * "HIDDEN" - Store each new git repository as a _HIDDEN_ one
     DefaultTarget = "VISIBLE"
     # The group you are using to perform some actions - typically, your hostname
-    Group = your_hostname
+    Group = yourHostname
 
 # A list of visible repositories
 # A visible repository is a repository you want some updates on
 [[visible]]
-    Name = repository_name
-    Path = repository_path
+    Name = repositoryName
+    Path = repositoryPath
 
 # A list of hidden repositories
 # An hidden repository is a repository you do not want updates on
 [[hidden]]
-    Name = repository_name
-    Path = repository_path
+    Name = repositoryName
+    Path = repositoryPath
 ```
 
 ### How to use it?
