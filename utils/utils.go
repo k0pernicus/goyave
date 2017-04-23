@@ -3,7 +3,25 @@ package utils
 import (
 	"os"
 	"os/user"
+	"path/filepath"
+
+	"github.com/k0pernicus/goyave/consts"
 )
+
+/*IsGitRepository returns if the path, given as an argument, is a git repository or not.
+ *This function returns a boolean value: true if the pathdir pointed to a git repository, else false.
+ */
+func IsGitRepository(pathdir string) bool {
+	if filepath.Base(pathdir) != consts.GitFileName {
+		pathdir = filepath.Join(pathdir, consts.GitFileName)
+	}
+	file, err := os.Open(pathdir)
+	if err != nil {
+		return false
+	}
+	_, err = file.Stat()
+	return !os.IsNotExist(err)
+}
 
 /*GetUserHomeDir returns the home directory of the current user.
  */
