@@ -77,6 +77,24 @@ func main() {
 		},
 	}
 
+	var addCmd = &cobra.Command{
+		Use:   "add",
+		Short: "Add the current path as a VISIBLE repository",
+		Run: func(cmd *cobra.Command, args []string) {
+			// Get the path where the command has been executed
+			currentDir, err := os.Getwd()
+			if err != nil {
+				log.Fatalln("There was a problem retrieving the current directory")
+			}
+			if !utils.IsGitRepository(currentDir) {
+				log.Fatalf("%s is not a git repository!\n", currentDir)
+			}
+			if err := configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag); err != nil {
+				traces.WarningTracer.Printf("[%s] %s\n", currentDir, err)
+			}
+		},
+	}
+
 	/*crawlCmd is a subcommand to crawl your hard drive in order to get and save new git repositories
 	 */
 	var crawlCmd = &cobra.Command{
@@ -111,7 +129,7 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(crawlCmd, stateCmd)
+	rootCmd.AddCommand(addCmd, crawlCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
