@@ -48,6 +48,18 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
 	}
 }
 
+/*kill saves the current state of the configuration structure in the configuration file
+ */
+func kill() {
+	var outputBuffer bytes.Buffer
+	if err := configurationFileStructure.Encode(&outputBuffer); err != nil {
+		log.Fatalln("Cannot save the current configurationFile structure!")
+	}
+	if err := ioutil.WriteFile(configurationFilePath, outputBuffer.Bytes(), 0777); err != nil {
+		log.Fatalln("Cannot access to your file to save the configurationFile structure!")
+	}
+}
+
 func main() {
 
 	/*rootCmd defines the global app, and some actions to run before and after the command running
@@ -61,13 +73,7 @@ func main() {
 		},
 		// Save the current configuration file structure, in the configuration file
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
-			var outputBuffer bytes.Buffer
-			if err := configurationFileStructure.Encode(&outputBuffer); err != nil {
-				log.Fatalln("Cannot save the current configurationFile structure!")
-			}
-			if err := ioutil.WriteFile(configurationFilePath, outputBuffer.Bytes(), 0777); err != nil {
-				log.Fatalln("Cannot access to your file to save the configurationFile structure!")
-			}
+			kill()
 		},
 	}
 
