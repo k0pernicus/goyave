@@ -18,5 +18,8 @@ const GitFileName = ".git"
 //// ERRORS ////
 ////////////////
 
-// RepositoryAlreadyExists is an error that append an existing path repository in a list
+// RepositoryAlreadyExists is an error that raises when an existing path repository is in a list
 const RepositoryAlreadyExists = "REPOSITORY_ALREADY_EXISTS"
+
+// ItemIsNotIsSlice is an error that raises when an searched item is not in the given slice
+const ItemIsNotInSlice = "ITEM_IS_NOT_IN_SLICE"
