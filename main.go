@@ -119,7 +119,7 @@ func main() {
 		},
 	}
 
-	/*stateCmd is a subcommand to list the state of each local git repository
+	/*stateCmd is a subcommand to list the state of each local git repository.
 	 */
 	var stateCmd = &cobra.Command{
 		Use:   "state",
