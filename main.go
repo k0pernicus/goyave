@@ -12,7 +12,6 @@ import (
 	"github.com/k0pernicus/goyave/consts"
 	"github.com/k0pernicus/goyave/traces"
 	"github.com/k0pernicus/goyave/utils"
-	"github.com/k0pernicus/goyave/walk"
 )
 
 /*getConfigurationFileContent get the content of the local configuration file.
@@ -58,16 +57,16 @@ func main() {
 		log.Fatalln(err)
 	}
 	// Get all git paths, and display them
-	gitPaths, err := walk.RetrieveGitRepositories(userHomeDir)
-	if err != nil {
-		log.Fatalf("There was an error retrieving your git repositories: '%s'\n", err)
-	}
-	// For each git repository, check if it exists, and if not add it to the default target visibility
-	for _, gitPath := range gitPaths {
-		if err := configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget); err != nil {
-			traces.WarningTracer.Printf("[%s] %s", gitPath, err)
-		}
-	}
+	// gitPaths, err := walk.RetrieveGitRepositories(userHomeDir)
+	// if err != nil {
+	// 	log.Fatalf("There was an error retrieving your git repositories: '%s'\n", err)
+	// }
+	// // For each git repository, check if it exists, and if not add it to the default target visibility
+	// for _, gitPath := range gitPaths {
+	// 	if err := configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget); err != nil {
+	// 		traces.WarningTracer.Printf("[%s] %s", gitPath, err)
+	// 	}
+	// }
 	// For each VISIBLE repository, get some informations about his state and display it
 	for _, gitStruct := range configurationFileStructure.VisibleRepositories {
 		// Add those instruction in goroutines
