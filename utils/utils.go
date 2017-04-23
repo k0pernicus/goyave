@@ -44,3 +44,15 @@ func GetLocalhost() string {
 	}
 	return lhost
 }
+
+/*SliceIndex returns the index of the element searched.
+ *If the element is not in the slice, the function returns -1.
+ */
+func SliceIndex(limit int, predicate func(i int) bool) int {
+	for i := 0; i < limit; i++ {
+		if predicate(i) {
+			return i
+		}
+	}
+	return -1
+}
