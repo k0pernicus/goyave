@@ -8,6 +8,7 @@ package configurationFile
 import (
 	"bytes"
 	"errors"
+	"io/ioutil"
 	"path/filepath"
 
 	"fmt"
@@ -19,8 +20,27 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/consts"
 	"github.com/k0pernicus/goyave/gitManip"
+	"github.com/k0pernicus/goyave/traces"
 	"github.com/k0pernicus/goyave/utils"
 )
+
+/*GetConfigurationFileContent get the content of the local configuration file.
+ *If no configuration file has been found, create a default one and set the bytes array.
+ */
+func GetConfigurationFileContent(filePointer *os.File, bytesArray *[]byte) {
+	fileState, err := filePointer.Stat()
+	// If the file is empty, get the default structure and save it
+	if err != nil || fileState.Size() == 0 {
+		traces.WarningTracer.Println("No (or empty) configuration file - creating default one...")
+		var fileBuffer bytes.Buffer
+		defaultStructure := Default()
+		defaultStructure.Encode(&fileBuffer)
+		*bytesArray = fileBuffer.Bytes()
+	} else {
+		b, _ := ioutil.ReadAll(filePointer)
+		*bytesArray = b
+	}
+}
 
 /*ConfigurationFile represents the TOML structure of the Goyave configuration file.
  *
