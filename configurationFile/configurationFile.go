@@ -135,6 +135,27 @@ func (c *ConfigurationFile) addHiddenRepository(path string) error {
 	return nil
 }
 
+/*RemoveRepositoryFromSlice returns a new slice without the corresponding element (here, a string).
+ *If the element is not found, this method returns an error.
+ */
+func (c *ConfigurationFile) RemoveRepositoryFromSlice(path string, slice string) error {
+	// The code below is the same for visible and hidden repositories - need to refactor the code later
+	if slice == consts.VisibleFlag {
+		sliceIndex := utils.SliceIndex(len(c.VisibleRepositories), func(i int) bool { return c.VisibleRepositories[i].Path == path })
+		if sliceIndex != -1 {
+			c.VisibleRepositories = append(c.VisibleRepositories[:sliceIndex], c.VisibleRepositories[sliceIndex+1:]...)
+			return nil
+		}
+		return errors.New(consts.ItemIsNotInSlice)
+	}
+	sliceIndex := utils.SliceIndex(len(c.HiddenRepositories), func(i int) bool { return c.HiddenRepositories[i].Path == path })
+	if sliceIndex != -1 {
+		c.HiddenRepositories = append(c.HiddenRepositories[:sliceIndex], c.HiddenRepositories[sliceIndex+1:]...)
+		return nil
+	}
+	return errors.New(consts.ItemIsNotInSlice)
+}
+
 /*GitRepository represents the structure of a local git repository.
  *
  *Properties of this structure are:
