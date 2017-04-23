@@ -132,7 +132,32 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(addCmd, crawlCmd, stateCmd)
+	/*switchCmd is a subcommand to switch the visibility of the current git repository.
+	 */
+	var switchCmd = &cobra.Command{
+		Use:   "switch",
+		Short: "Switch the visibility of the current git repository (given by the current path)",
+		Run: func(cmd *cobra.Command, args []string) {
+			// Get the path where the command has been executed
+			currentDir, err := os.Getwd()
+			if err != nil {
+				log.Fatalln("There was a problem retrieving the current directory")
+			}
+			if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.VisibleFlag); err == nil {
+				configurationFileStructure.AddRepository(currentDir, consts.HiddenFlag)
+				traces.InfoTracer.Printf("%s has been set to an hidden repository!", currentDir)
+				return
+			}
+			if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.HiddenFlag); err == nil {
+				configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag)
+				traces.InfoTracer.Printf("%s has been set to a visible repository!", currentDir)
+				return
+			}
+			log.Fatalf("The repository %s is not saved as a VISIBLE or HIDDEN repository! Please to add it before.\n", currentDir)
+		},
+	}
+
+	rootCmd.AddCommand(addCmd, crawlCmd, stateCmd, switchCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
