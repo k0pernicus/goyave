@@ -101,7 +101,7 @@ func main() {
 		Use:   "crawl",
 		Short: "Crawl the hard drive in order to find git repositories",
 		Run: func(cmd *cobra.Command, args []string) {
-			//		Get all git paths, and display them
+			// Get all git paths, and display them
 			gitPaths, err := walk.RetrieveGitRepositories(userHomeDir)
 			if err != nil {
 				log.Fatalf("There was an error retrieving your git repositories: '%s'\n", err)
@@ -109,10 +109,10 @@ func main() {
 			// For each git repository, check if it exists, and if not add it to the default target visibility
 			for _, gitPath := range gitPaths {
 				if err := configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget); err != nil {
-					traces.WarningTracer.Printf("[%s] %s", gitPath, err)
+					traces.WarningTracer.Printf("[%s] %s\n", gitPath, err)
 				}
 			}
-			//For each VISIBLE repository, get some informations about his state and display it
+			// For each VISIBLE repository, get some informations about his state and display it
 		},
 	}
 
