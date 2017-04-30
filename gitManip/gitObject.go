@@ -125,7 +125,7 @@ func (g *GitObject) printChanges() error {
 		return err
 	}
 	if numDeltas > 0 {
-		fmt.Printf("%s %s\t[%d modification(s)]\n", color.RedString("/!\\"), g.path, numDeltas)
+		fmt.Printf("%s %s\t[%d modification(s)]\n", color.RedString("✘"), g.path, numDeltas)
 		for i := 0; i < numDeltas; i++ {
 			delta, _ := diff.GetDelta(i)
 			currentStatus := delta.Status
@@ -146,6 +146,8 @@ func (g *GitObject) printChanges() error {
 				fmt.Printf("\t===> the type of %s has been changed from %d to %d!", color.MagentaString(newFile), delta.OldFile.Mode, delta.NewFile.Mode)
 			}
 		}
+	} else {
+		fmt.Printf("%s %s\n", color.GreenString("✔"), g.path)
 	}
 	return nil
 }
