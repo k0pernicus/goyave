@@ -8,6 +8,8 @@ import (
 	"os"
 	"path"
 
+	"sync"
+
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/configurationFile"
 	"github.com/k0pernicus/goyave/consts"
@@ -104,6 +106,7 @@ func main() {
 		Use:   "crawl",
 		Short: "Crawl the hard drive in order to find git repositories",
 		Run: func(cmd *cobra.Command, args []string) {
+			var wg sync.WaitGroup
 			// Get all git paths, and display them
 			gitPaths, err := walk.RetrieveGitRepositories(userHomeDir)
 			if err != nil {
@@ -111,11 +114,15 @@ func main() {
 			}
 			// For each git repository, check if it exists, and if not add it to the default target visibility
 			for _, gitPath := range gitPaths {
-				if err := configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget); err != nil {
-					traces.WarningTracer.Printf("[%s] %s\n", gitPath, err)
-				}
+				wg.Add(1)
+				go func(gitPath string) {
+					defer wg.Done()
+					if err := configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget); err != nil {
+						traces.WarningTracer.Printf("[%s] %s\n", gitPath, err)
+					}
+				}(gitPath)
 			}
-			// For each VISIBLE repository, get some informations about his state and display it
+			wg.Wait()
 		},
 	}
 
