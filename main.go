@@ -132,10 +132,16 @@ func main() {
 		Use:   "state",
 		Short: "Get the state of each local git repository",
 		Run: func(cmd *cobra.Command, args []string) {
+			var wg sync.WaitGroup
 			for _, gitStruct := range configurationFileStructure.VisibleRepositories {
-				gitStruct.Init()
-				gitStruct.GitObject.Status()
+				wg.Add(1)
+				go func(gitStruct configurationFile.GitRepository) {
+					defer wg.Done()
+					gitStruct.Init()
+					gitStruct.GitObject.Status()
+				}(gitStruct)
 			}
+			wg.Wait()
 		},
 	}
 
