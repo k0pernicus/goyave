@@ -17,6 +17,8 @@ import (
 
 	"os"
 
+	"strings"
+
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/consts"
 	"github.com/k0pernicus/goyave/gitManip"
@@ -171,6 +173,12 @@ type GitRepository struct {
 	Name      string
 	Path      string
 }
+
+type ByName []GitRepository
+
+func (g ByName) Len() int           { return len(g) }
+func (g ByName) Swap(i, j int)      { g[i], g[j] = g[j], g[i] }
+func (g ByName) Less(i, j int) bool { return strings.Compare(g[i].Name, g[j].Name) == -1 }
 
 /*NewGitRepository instantiates the GitRepository struct, based on the path information.
  */
