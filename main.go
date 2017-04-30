@@ -10,6 +10,8 @@ import (
 
 	"sync"
 
+	"sort"
+
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/configurationFile"
 	"github.com/k0pernicus/goyave/consts"
@@ -129,11 +131,29 @@ func main() {
 	/*stateCmd is a subcommand to list the state of each local git repository.
 	 */
 	var stateCmd = &cobra.Command{
-		Use:   "state",
-		Short: "Get the state of each local git repository",
+		Use:     "state",
+		Example: "goyave state\ngoyave state myRepositoryName\ngoyave state myRepositoryName1 myRepositoryName2",
+		Short:   "Get the state of each local visible git repository",
+		Long:    "Check only visible git repositories.\nIf some repository names have been setted, goyave will only check those repositories, otherwise it checks all visible repositories of your system.",
 		Run: func(cmd *cobra.Command, args []string) {
+			var gitStructs []configurationFile.GitRepository
+			if len(args) == 0 {
+				gitStructs = configurationFileStructure.VisibleRepositories
+			} else {
+				// Sort visible repositories by name
+				sort.Sort(configurationFile.ByName(configurationFileStructure.VisibleRepositories))
+				repositoriesListLength := len(configurationFileStructure.VisibleRepositories)
+				for _, repositoryName := range args {
+					repositoryIndex := sort.Search(repositoriesListLength, func(i int) bool { return configurationFileStructure.VisibleRepositories[i].Name >= repositoryName })
+					if repositoryIndex != repositoriesListLength {
+						gitStructs = append(gitStructs, configurationFileStructure.VisibleRepositories[repositoryIndex])
+					} else {
+						traces.WarningTracer.Printf("%s cannot be found in your visible repositories!\n", repositoryName)
+					}
+				}
+			}
 			var wg sync.WaitGroup
-			for _, gitStruct := range configurationFileStructure.VisibleRepositories {
+			for _, gitStruct := range gitStructs {
 				wg.Add(1)
 				go func(gitStruct configurationFile.GitRepository) {
 					defer wg.Done()
