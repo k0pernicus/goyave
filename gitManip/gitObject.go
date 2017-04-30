@@ -5,7 +5,7 @@ import (
 
 	"github.com/fatih/color"
 
-	git "gopkg.in/libgit2/git2go.v24"
+	git "gopkg.in/libgit2/git2go.v25"
 )
 
 /*Map to match the RepositoryState enum type with a string
