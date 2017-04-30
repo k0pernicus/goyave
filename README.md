@@ -48,6 +48,10 @@ Author = yourSessionAccount
 * `goyave crawl` (needed!)
 * `goyave state`
 
+### Troubleshootings
+
+* Please to make sure that the 25th version of [libgit2](https://libgit2.github.com/) is installed on your computer.
+
 ### LICENSE
 
 MIT License
