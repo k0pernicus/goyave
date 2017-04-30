@@ -143,6 +143,7 @@ func main() {
 				// Sort visible repositories by name
 				sort.Sort(configurationFile.ByName(configurationFileStructure.VisibleRepositories))
 				repositoriesListLength := len(configurationFileStructure.VisibleRepositories)
+				// Looking for given repository names - if the looking one does not exists, let the function prints a warning message.
 				for _, repositoryName := range args {
 					repositoryIndex := sort.Search(repositoriesListLength, func(i int) bool { return configurationFileStructure.VisibleRepositories[i].Name >= repositoryName })
 					if repositoryIndex != repositoriesListLength {
