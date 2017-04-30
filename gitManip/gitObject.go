@@ -84,6 +84,8 @@ func (g *GitObject) Status() {
 		if err := g.printChanges(); err != nil {
 			color.RedString("Impossible to get stats from %s, due to error %s", g.path, err)
 		}
+	} else {
+		color.RedString("Repository %s not found!", g.path)
 	}
 }
 
