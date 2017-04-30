@@ -174,10 +174,20 @@ type GitRepository struct {
 	Path      string
 }
 
+/*ByName implements sort.Interface for []GitRepository based on the Name field.
+ */
 type ByName []GitRepository
 
-func (g ByName) Len() int           { return len(g) }
-func (g ByName) Swap(i, j int)      { g[i], g[j] = g[j], g[i] }
+/*Len returns the length of the ByName type object.
+ */
+func (g ByName) Len() int { return len(g) }
+
+/*Swap swaps two objects in the same array.
+ */
+func (g ByName) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
+
+/*Less returns True if the first element is lower than the second one (alphabetic order).
+ */
 func (g ByName) Less(i, j int) bool { return strings.Compare(g[i].Name, g[j].Name) == -1 }
 
 /*NewGitRepository instantiates the GitRepository struct, based on the path information.
