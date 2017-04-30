@@ -23,17 +23,6 @@ var repositoryStateToString = map[git.RepositoryState]string{
 	git.RepositoryStateApplyMailboxOrRebase: "Apply Mailbox or Rebase",
 }
 
-var fileStateToString = map[git.Status]string{
-	git.StatusIndexNew:     "You forgot to commit a new file!",
-	git.StatusIgnored:      "Ignored",
-	git.StatusConflicted:   "Conflicted",
-	git.StatusWtNew:        "New file in your working tree!",
-	git.StatusWtModified:   "Modified file in your working tree!",
-	git.StatusWtDeleted:    "Deleted file in your working tree!",
-	git.StatusWtTypeChange: "Type change detected in your working tree!",
-	git.StatusWtRenamed:    "Renamed file in your working tree!",
-}
-
 /*Global variable to set the StatusOption parameter, in order to list each file status
  */
 var statusOption = git.StatusOptions{
