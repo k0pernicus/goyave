@@ -5,6 +5,8 @@ import (
 
 	"github.com/fatih/color"
 
+	"bytes"
+
 	git "gopkg.in/libgit2/git2go.v25"
 )
 
@@ -106,6 +108,7 @@ func (g *GitObject) getDiffWithWT() (*git.Diff, error) {
  */
 func (g *GitObject) printChanges() error {
 	diff, err := g.getDiffWithWT()
+	var buffer bytes.Buffer
 	if err != nil {
 		return err
 	}
@@ -114,7 +117,7 @@ func (g *GitObject) printChanges() error {
 		return err
 	}
 	if numDeltas > 0 {
-		fmt.Printf("%s %s\t[%d modification(s)]\n", color.RedString("✘"), g.path, numDeltas)
+		buffer.WriteString(fmt.Sprintf("%s %s\t[%d modification(s)]\n", color.RedString("✘"), g.path, numDeltas))
 		for i := 0; i < numDeltas; i++ {
 			delta, _ := diff.GetDelta(i)
 			currentStatus := delta.Status
@@ -122,22 +125,23 @@ func (g *GitObject) printChanges() error {
 			oldFile := delta.OldFile.Path
 			switch currentStatus {
 			case git.DeltaAdded:
-				fmt.Printf("\t===> %s has been added!\n", color.MagentaString(newFile))
+				buffer.WriteString(fmt.Sprintf("\t===> %s has been added!\n", color.MagentaString(newFile)))
 			case git.DeltaDeleted:
-				fmt.Printf("\t===> %s has been deleted!\n", color.MagentaString(newFile))
+				buffer.WriteString(fmt.Sprintf("\t===> %s has been deleted!\n", color.MagentaString(newFile)))
 			case git.DeltaModified:
-				fmt.Printf("\t===> %s has been modified!\n", color.MagentaString(newFile))
+				buffer.WriteString(fmt.Sprintf("\t===> %s has been modified!\n", color.MagentaString(newFile)))
 			case git.DeltaRenamed:
-				fmt.Printf("\t===> %s has been renamed to %s!\n", color.MagentaString(oldFile), color.MagentaString(newFile))
+				buffer.WriteString(fmt.Sprintf("\t===> %s has been renamed to %s!\n", color.MagentaString(oldFile), color.MagentaString(newFile)))
 			case git.DeltaUntracked:
-				fmt.Printf("\t===> %s is untracked - please to add it or update the gitignore file!\n", color.MagentaString(newFile))
+				buffer.WriteString(fmt.Sprintf("\t===> %s is untracked - please to add it or update the gitignore file!\n", color.MagentaString(newFile)))
 			case git.DeltaTypeChange:
-				fmt.Printf("\t===> the type of %s has been changed from %d to %d!", color.MagentaString(newFile), delta.OldFile.Mode, delta.NewFile.Mode)
+				buffer.WriteString(fmt.Sprintf("\t===> the type of %s has been changed from %d to %d!", color.MagentaString(newFile), delta.OldFile.Mode, delta.NewFile.Mode))
 			}
 		}
 	} else {
-		fmt.Printf("%s %s\n", color.GreenString("✔"), g.path)
+		buffer.WriteString(fmt.Sprintf("%s %s\n", color.GreenString("✔"), g.path))
 	}
+	fmt.Print(buffer.String())
 	return nil
 }
 
