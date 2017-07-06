@@ -111,10 +111,7 @@ func (c *ConfigurationFile) addVisibleRepository(path string) error {
 			return errors.New(consts.RepositoryAlreadyExists)
 		}
 	}
-	var newVisibleRepository = GitRepository{
-		Name: filepath.Base(path),
-		Path: path,
-	}
+	var newVisibleRepository = NewGitRepository(filepath.Base(path), path)
 	c.VisibleRepositories = append(c.VisibleRepositories, newVisibleRepository)
 	return nil
 }
@@ -129,10 +126,7 @@ func (c *ConfigurationFile) addHiddenRepository(path string) error {
 			return errors.New(consts.RepositoryAlreadyExists)
 		}
 	}
-	var newHiddenRepository = GitRepository{
-		Name: filepath.Base(path),
-		Path: path,
-	}
+	var newHiddenRepository = NewGitRepository(filepath.Base(path), path)
 	c.HiddenRepositories = append(c.HiddenRepositories, newHiddenRepository)
 	return nil
 }
@@ -174,16 +168,19 @@ func (c *ConfigurationFile) RemoveRepositoryFromSlice(path string, slice string)
  *
  *Properties of this structure are:
  *	GitObject:
- *		A reference to a git structure that represents the repository.
+ *		A reference to a git structure that represents the repository - ignored in the TOML file.
  *	Name:
  * 		The custom name of the repository.
  *	Path:
  *		The path of the repository.
+ *	URL:
+ *		The remote URL of the repository (from origin).
  */
 type GitRepository struct {
-	GitObject *gitManip.GitObject
+	GitObject *gitManip.GitObject `toml:"-"`
 	Name      string
 	Path      string
+	URL       string
 }
 
 /*ByName implements sort.Interface for []GitRepository based on the Name field.
@@ -204,11 +201,13 @@ func (g ByName) Less(i, j int) bool { return strings.Compare(g[i].Name, g[j].Nam
 
 /*NewGitRepository instantiates the GitRepository struct, based on the path information.
  */
-func NewGitRepository(name, path string) *GitRepository {
-	return &GitRepository{
-		GitObject: gitManip.New(path),
+func NewGitRepository(name, path string) GitRepository {
+	gitObject := gitManip.New(path)
+	return GitRepository{
+		GitObject: gitObject,
 		Name:      name,
 		Path:      path,
+		URL:       gitObject.GetRemoteURL(),
 	}
 }
 
