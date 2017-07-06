@@ -51,12 +51,23 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
 	if _, err = toml.Decode(string(bytesArray[:]), configurationFileStructure); err != nil {
 		log.Fatalln(err)
 	}
+	if err := configurationFileStructure.Process(); err != nil {
+		traces.ErrorTracer.Fatalln(err)
+	}
 }
 
 /*kill saves the current state of the configuration structure in the configuration file
  */
 func kill() {
 	var outputBuffer bytes.Buffer
+	currentGroupIndex := utils.SliceIndex(len(configurationFileStructure.Groups), func(i int) bool {
+		return configurationFileStructure.Groups[i].Name == configurationFileStructure.Local.Group
+	})
+	var newVisibleRepositories []string
+	for _, visibleRepository := range configurationFileStructure.VisibleRepositories {
+		newVisibleRepositories = append(newVisibleRepositories, visibleRepository.Name)
+	}
+	configurationFileStructure.Groups[currentGroupIndex].VisibleRepositories = newVisibleRepositories
 	if err := configurationFileStructure.Encode(&outputBuffer); err != nil {
 		log.Fatalln("Cannot save the current configurationFile structure!")
 	}
