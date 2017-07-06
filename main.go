@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -128,6 +129,28 @@ func main() {
 		},
 	}
 
+	var loadCmd = &cobra.Command{
+		Use:   "load",
+		Short: "Load the configuration file to restore your previous work space",
+		Run: func(cmd *cobra.Command, args []string) {
+			currentLocalhost := utils.GetLocalhost()
+			configGroups := configurationFileStructure.Groups
+			for {
+				if utils.SliceIndex(len(configGroups), func(i int) bool { return configGroups[i].Name == currentLocalhost }) == -1 {
+					traces.WarningTracer.Printf("Your current local host (%s) has not been found!", currentLocalhost)
+					fmt.Println("Please to choose one of those, to load the configuration file:")
+					for _, group := range configGroups {
+						fmt.Printf("\t%s\n", group)
+					}
+					scanner := bufio.NewScanner(os.Stdin)
+					currentLocalhost = scanner.Text()
+					continue
+				}
+				break
+			}
+		},
+	}
+
 	/*pathCmd is a subcommand to get the path of a given git repository.
 	 *This subcommand is useful to change directory, like `cd $(goyave path mygitrepo)`
 	 */
@@ -211,7 +234,7 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(addCmd, crawlCmd, pathCmd, stateCmd, switchCmd)
+	rootCmd.AddCommand(addCmd, crawlCmd, loadCmd, pathCmd, stateCmd, switchCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
