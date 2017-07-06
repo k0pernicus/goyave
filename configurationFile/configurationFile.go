@@ -19,6 +19,8 @@ import (
 
 	"strings"
 
+	"sort"
+
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/consts"
 	"github.com/k0pernicus/goyave/gitManip"
@@ -59,8 +61,8 @@ func GetConfigurationFileContent(filePointer *os.File, bytesArray *[]byte) {
 type ConfigurationFile struct {
 	Author              string
 	Local               LocalInformations `toml:"local"`
-	VisibleRepositories []GitRepository   `toml:"visible"`
-	HiddenRepositories  []GitRepository   `toml:"hidden"`
+	Repositories        []GitRepository   `toml:"repositories"`
+	VisibleRepositories []GitRepository   `toml:"-"`
 	Groups              []Group           `toml:"group"`
 }
 
@@ -68,11 +70,17 @@ type ConfigurationFile struct {
  */
 func Default() *ConfigurationFile {
 	usr, _ := user.Current()
+	localhost := utils.GetLocalhost()
 	return &ConfigurationFile{
 		Author: usr.Username,
 		Local: LocalInformations{
 			DefaultTarget: consts.VisibleFlag,
-			Group:         utils.GetLocalhost(),
+			Group:         localhost,
+		},
+		Groups: []Group{
+			Group{
+				Name: localhost,
+			},
 		},
 	}
 }
@@ -92,13 +100,15 @@ func (c *ConfigurationFile) GetDefaultEntry() (string, error) {
  *This method uses both methods addVisibleRepository and addHiddenRepository.
  */
 func (c *ConfigurationFile) AddRepository(path string, target string) error {
+	if utils.SliceIndex(len(c.Repositories), func(i int) bool { return c.Repositories[i].Path == path }) != -1 {
+		return errors.New(consts.RepositoryAlreadyExists)
+	}
+	var newRepository = NewGitRepository(filepath.Base(path), path)
+	c.Repositories = append(c.Repositories, newRepository)
 	if target == consts.VisibleFlag {
-		return c.addVisibleRepository(path)
+		c.VisibleRepositories = append(c.VisibleRepositories, newRepository)
 	}
-	if target == consts.HiddenFlag {
-		return c.addHiddenRepository(path)
-	}
-	return errors.New("the target does not exists")
+	return nil
 }
 
 /*addVisibleRepository adds a given git repo path as a visible repository.
@@ -116,21 +126,6 @@ func (c *ConfigurationFile) addVisibleRepository(path string) error {
 	return nil
 }
 
-/*addHiddenRepository adds a given git repo path as an hidden repository.
- *If the repository already exists in the HiddenRepository field, the method throws an error: RepositoryAlreadyExists.
- *Else, the repository is append to the HiddenRepository field, and the method returns nil.
- */
-func (c *ConfigurationFile) addHiddenRepository(path string) error {
-	for _, registeredRepository := range c.HiddenRepositories {
-		if registeredRepository.Path == path {
-			return errors.New(consts.RepositoryAlreadyExists)
-		}
-	}
-	var newHiddenRepository = NewGitRepository(filepath.Base(path), path)
-	c.HiddenRepositories = append(c.HiddenRepositories, newHiddenRepository)
-	return nil
-}
-
 /*GetPathFromRepository returns the path of a given git repository name.
  *If the repository does not exists, it returns an empty string.
  */
@@ -141,6 +136,34 @@ func (c *ConfigurationFile) GetPathFromRepository(target string) string {
 		}
 	}
 	return ""
+}
+
+/*Process manages the current configuration file
+ */
+func (c *ConfigurationFile) Process() error {
+	currentGroup := c.Local.Group
+	var visibleRepositories []string
+	for _, group := range c.Groups {
+		groupName := group.Name
+		groupRepositories := group.VisibleRepositories
+		if groupName == currentGroup {
+			visibleRepositories = groupRepositories
+		}
+	}
+	if len(visibleRepositories) == 0 {
+		return fmt.Errorf("no group %s in your configuration file", currentGroup)
+	}
+	// Sort repositories
+	sort.Sort(ByName(c.Repositories))
+	for _, visibleRepository := range visibleRepositories {
+		index := utils.SliceIndex(len(c.Repositories), func(i int) bool { return c.Repositories[i].Name == visibleRepository })
+		if index == -1 {
+			traces.WarningTracer.Printf("Repository %s has not been found!", visibleRepository)
+			continue
+		}
+		c.addVisibleRepository(c.Repositories[index].Path)
+	}
+	return nil
 }
 
 /*RemoveRepositoryFromSlice returns a new slice without the corresponding element (here, a string).
@@ -155,11 +178,6 @@ func (c *ConfigurationFile) RemoveRepositoryFromSlice(path string, slice string)
 			return nil
 		}
 		return errors.New(consts.ItemIsNotInSlice)
-	}
-	sliceIndex := utils.SliceIndex(len(c.HiddenRepositories), func(i int) bool { return c.HiddenRepositories[i].Path == path })
-	if sliceIndex != -1 {
-		c.HiddenRepositories = append(c.HiddenRepositories[:sliceIndex], c.HiddenRepositories[sliceIndex+1:]...)
-		return nil
 	}
 	return errors.New(consts.ItemIsNotInSlice)
 }
@@ -236,8 +254,8 @@ func (g *GitRepository) isExists() bool {
  *		A list of git repositories id, tagged in the group.
  */
 type Group struct {
-	Name         string
-	Repositories []string
+	Name                string
+	VisibleRepositories []string
 }
 
 /*LocalInformations represents your local configuration of Goyave.
