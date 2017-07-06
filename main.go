@@ -166,6 +166,23 @@ func main() {
 		},
 	}
 
+	var pathCmd = &cobra.Command{
+		Use:   "path",
+		Short: "Get the path of a given repository, if this one exists",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				log.Fatalln("Needs a repository name!")
+			}
+			repo := args[0]
+			repoPath := configurationFileStructure.GetPathFromRepository(repo)
+			if repoPath != "" {
+				fmt.Println(repoPath)
+			} else {
+				log.Fatalf("The repository %s does not exists!\n", repo)
+			}
+		},
+	}
+
 	/*switchCmd is a subcommand to switch the visibility of the current git repository.
 	 */
 	var switchCmd = &cobra.Command{
@@ -191,7 +208,7 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(addCmd, crawlCmd, stateCmd, switchCmd)
+	rootCmd.AddCommand(addCmd, crawlCmd, pathCmd, stateCmd, switchCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
