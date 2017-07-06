@@ -137,6 +137,18 @@ func (c *ConfigurationFile) addHiddenRepository(path string) error {
 	return nil
 }
 
+/*GetPathFromRepository returns the path of a given git repository name.
+ *If the repository does not exists, it returns an empty string.
+ */
+func (c *ConfigurationFile) GetPathFromRepository(target string) string {
+	for _, registeredRepository := range c.VisibleRepositories {
+		if registeredRepository.Name == target {
+			return registeredRepository.Path
+		}
+	}
+	return ""
+}
+
 /*RemoveRepositoryFromSlice returns a new slice without the corresponding element (here, a string).
  *If the element is not found, this method returns an error.
  */
