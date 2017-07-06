@@ -128,6 +128,26 @@ func main() {
 		},
 	}
 
+	/*pathCmd is a subcommand to get the path of a given git repository.
+	 *This subcommand is useful to change directory, like `cd $(goyave path mygitrepo)`
+	 */
+	var pathCmd = &cobra.Command{
+		Use:   "path",
+		Short: "Get the path of a given repository, if this one exists",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				log.Fatalln("Needs a repository name!")
+			}
+			repo := args[0]
+			repoPath := configurationFileStructure.GetPathFromRepository(repo)
+			if repoPath != "" {
+				fmt.Println(repoPath)
+			} else {
+				log.Fatalf("The repository %s does not exists!\n", repo)
+			}
+		},
+	}
+
 	/*stateCmd is a subcommand to list the state of each local git repository.
 	 */
 	var stateCmd = &cobra.Command{
@@ -163,23 +183,6 @@ func main() {
 				}(gitStruct)
 			}
 			wg.Wait()
-		},
-	}
-
-	var pathCmd = &cobra.Command{
-		Use:   "path",
-		Short: "Get the path of a given repository, if this one exists",
-		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) == 0 {
-				log.Fatalln("Needs a repository name!")
-			}
-			repo := args[0]
-			repoPath := configurationFileStructure.GetPathFromRepository(repo)
-			if repoPath != "" {
-				fmt.Println(repoPath)
-			} else {
-				log.Fatalf("The repository %s does not exists!\n", repo)
-			}
 		},
 	}
 
