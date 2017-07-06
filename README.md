@@ -34,12 +34,14 @@ Author = yourSessionAccount
 [[visible]]
     Name = repositoryName
     Path = repositoryPath
+    URL  = remoteURL
 
 # A list of hidden repositories
 # An hidden repository is a repository you do not want updates on
 [[hidden]]
     Name = repositoryName
     Path = repositoryPath
+    URL  = remoteURL
 ```
 
 ### How to use it?
