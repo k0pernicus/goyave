@@ -79,7 +79,8 @@ func Default() *ConfigurationFile {
 		},
 		Groups: []Group{
 			Group{
-				Name: localhost,
+				Name:                localhost,
+				VisibleRepositories: []string{},
 			},
 		},
 	}
