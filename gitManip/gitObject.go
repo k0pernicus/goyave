@@ -60,6 +60,19 @@ func New(path string) *GitObject {
 	return &GitObject{accessible: err, path: path, repository: *r}
 }
 
+/*Clone is cloning a given repository, from a public URL
+ *
+ * It needs:
+ * path:
+ *		The local path to clone the repository.
+ *	URL:
+ *		The remote URL to fetch the repository.
+ */
+func Clone(path, URL string) error {
+	_, err := git.Clone(URL, path, &git.CloneOptions{})
+	return err
+}
+
 /*GetRemoteURL returns the URL from the Origin remote branch.
  *If the branch can't be reached, the function returns an empty string.
  */
