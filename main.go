@@ -16,6 +16,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/configurationFile"
 	"github.com/k0pernicus/goyave/consts"
+	"github.com/k0pernicus/goyave/gitManip"
 	"github.com/k0pernicus/goyave/traces"
 	"github.com/k0pernicus/goyave/utils"
 	"github.com/k0pernicus/goyave/walk"
@@ -50,9 +51,6 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
 	configurationFile.GetConfigurationFileContent(filePointer, &bytesArray)
 	if _, err = toml.Decode(string(bytesArray[:]), configurationFileStructure); err != nil {
 		log.Fatalln(err)
-	}
-	if err := configurationFileStructure.Process(); err != nil {
-		traces.ErrorTracer.Fatalln(err)
 	}
 }
 
@@ -107,6 +105,9 @@ func main() {
 			if !utils.IsGitRepository(currentDir) {
 				log.Fatalf("%s is not a git repository!\n", currentDir)
 			}
+			if err := configurationFileStructure.Process(); err != nil {
+				traces.ErrorTracer.Fatalln(err)
+			}
 			// If the path is/contains a .git directory, add this one as a VISIBLE repository
 			if err := configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag); err != nil {
 				traces.WarningTracer.Printf("[%s] %s\n", currentDir, err)
@@ -126,6 +127,9 @@ func main() {
 			if err != nil {
 				log.Fatalf("There was an error retrieving your git repositories: '%s'\n", err)
 			}
+			if err := configurationFileStructure.Process(); err != nil {
+				traces.ErrorTracer.Fatalln(err)
+			}
 			// For each git repository, check if it exists, and if not add it to the default target visibility
 			for _, gitPath := range gitPaths {
 				wg.Add(1)
@@ -140,24 +144,53 @@ func main() {
 		},
 	}
 
+	/*loadCmd permits to load visible repositories from the goyave configuration file
+	 */
 	var loadCmd = &cobra.Command{
 		Use:   "load",
 		Short: "Load the configuration file to restore your previous work space",
 		Run: func(cmd *cobra.Command, args []string) {
 			currentLocalhost := utils.GetLocalhost()
+			fmt.Printf("Current localhost is %s\n", currentLocalhost)
 			configGroups := configurationFileStructure.Groups
+			var visibleRepositories []string
 			for {
-				if utils.SliceIndex(len(configGroups), func(i int) bool { return configGroups[i].Name == currentLocalhost }) == -1 {
+				index := utils.SliceIndex(len(configGroups), func(i int) bool { return configGroups[i].Name == currentLocalhost })
+				if index == -1 {
 					traces.WarningTracer.Printf("Your current local host (%s) has not been found!", currentLocalhost)
 					fmt.Println("Please to choose one of those, to load the configuration file:")
 					for _, group := range configGroups {
-						fmt.Printf("\t%s\n", group)
+						fmt.Printf("\t%s\n", group.Name)
 					}
 					scanner := bufio.NewScanner(os.Stdin)
 					currentLocalhost = scanner.Text()
 					continue
+				} else {
+					visibleRepositories = configurationFileStructure.Groups[index].VisibleRepositories
 				}
 				break
+			}
+			traces.InfoTracer.Printf("Importing configuration from group %s\n", currentLocalhost)
+			for _, visibleRepository := range visibleRepositories {
+				traces.InfoTracer.Printf("* Importing %s...\n", visibleRepository)
+				index := utils.SliceIndex(len(configurationFileStructure.Repositories), func(i int) bool { return configurationFileStructure.Repositories[i].Name == visibleRepository })
+				// Check the local path, and the remote URL
+				if index == -1 {
+					traces.WarningTracer.Printf("\tThe repository \"%s\" does not exists in your configuration file.\n", visibleRepository)
+					continue
+				}
+				// Check if the repository exists locally
+				pathRepository, URLRepository := configurationFileStructure.Repositories[index].Path, configurationFileStructure.Repositories[index].URL
+				if _, err := os.Stat(pathRepository); err == nil {
+					traces.InfoTracer.Printf("\tThe repository \"%s\" already exists as a local git repository.\n", visibleRepository)
+					continue
+				}
+				// If it does not exists, clone it
+				if err := gitManip.Clone(pathRepository, URLRepository); err != nil {
+					traces.ErrorTracer.Printf("\tThe repository \"%s\" can't be cloned: %s\n", visibleRepository, err)
+				} else {
+					traces.InfoTracer.Printf("\tThe repository \"%s\" has been successfully cloned!\n", visibleRepository)
+				}
 			}
 		},
 	}
@@ -173,6 +206,9 @@ func main() {
 				log.Fatalln("Needs a repository name!")
 			}
 			repo := args[0]
+			if err := configurationFileStructure.Process(); err != nil {
+				traces.ErrorTracer.Fatalln(err)
+			}
 			repoPath := configurationFileStructure.GetPathFromRepository(repo)
 			if repoPath != "" {
 				fmt.Println(repoPath)
@@ -190,6 +226,9 @@ func main() {
 		Short:   "Get the state of each local visible git repository",
 		Long:    "Check only visible git repositories.\nIf some repository names have been setted, goyave will only check those repositories, otherwise it checks all visible repositories of your system.",
 		Run: func(cmd *cobra.Command, args []string) {
+			if err := configurationFileStructure.Process(); err != nil {
+				traces.ErrorTracer.Fatalln(err)
+			}
 			var gitStructs []configurationFile.GitRepository
 			if len(args) == 0 {
 				gitStructs = configurationFileStructure.VisibleRepositories
@@ -230,6 +269,9 @@ func main() {
 			currentDir, err := os.Getwd()
 			if err != nil {
 				log.Fatalln("There was a problem retrieving the current directory")
+			}
+			if err := configurationFileStructure.Process(); err != nil {
+				traces.ErrorTracer.Fatalln(err)
 			}
 			if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.VisibleFlag); err == nil {
 				configurationFileStructure.AddRepository(currentDir, consts.HiddenFlag)
