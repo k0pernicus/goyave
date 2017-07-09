@@ -139,9 +139,10 @@ func (c *ConfigurationFile) GetPathFromRepository(target string) string {
 	return ""
 }
 
-/*Process manages the current configuration file
+/*Extract extracts some useful informations from the current configuration file
  */
-func (c *ConfigurationFile) Process() error {
+func (c *ConfigurationFile) Extract() error {
+	fmt.Println(c)
 	currentGroup := c.Local.Group
 	var visibleRepositories []string
 	for _, group := range c.Groups {
@@ -162,7 +163,20 @@ func (c *ConfigurationFile) Process() error {
 			traces.WarningTracer.Printf("Repository %s has not been found!", visibleRepository)
 			continue
 		}
-		c.addVisibleRepository(c.Repositories[index].Path)
+		var cPath string
+		fmt.Println(c.Repositories[index])
+		for _, gPathObject := range c.Repositories[index].Paths {
+			fmt.Printf("%s vs %s\n", gPathObject.Name, currentGroup)
+			if gPathObject.Name == currentGroup {
+				cPath = gPathObject.Path
+			}
+		}
+		if len(cPath) == 0 {
+			traces.ErrorTracer.Printf("The path for repository %s is not set - please to check your configuration file!\n", visibleRepository)
+			continue
+		}
+		fmt.Printf("Current cPath: %s\n", cPath)
+		c.addVisibleRepository(cPath)
 	}
 	return nil
 }
@@ -199,6 +213,7 @@ type GitRepository struct {
 	GitObject *gitManip.GitObject `toml:"-"`
 	Name      string
 	Path      string
+	Paths     []GroupPath `toml:"paths"`
 	URL       string
 }
 
@@ -225,7 +240,6 @@ func NewGitRepository(name, path string) GitRepository {
 	return GitRepository{
 		GitObject: gitObject,
 		Name:      name,
-		Path:      path,
 		URL:       gitObject.GetRemoteURL(),
 	}
 }
@@ -243,6 +257,17 @@ func (g *GitRepository) Init() {
 func (g *GitRepository) isExists() bool {
 	_, err := os.Stat(g.Path)
 	return os.IsNotExist(err)
+}
+
+/*GroupPath represents the structure of a local path, using a given group.
+ *
+ *Properties of this structure are:
+ *	Path:
+ *		A string that points to the local git repository.
+ */
+type GroupPath struct {
+	Name string
+	Path string
 }
 
 /*Group represents a group of git repositories.

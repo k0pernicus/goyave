@@ -35,12 +35,11 @@ Author = yourSessionAccount
     Name = repositoryName
     URL  = remoteURL
     [[repositories.local]]
-        Name = aLocalHostname
         Path = theLocalPath
 
 [[group]]
     Name = aLocalHostname
-    VisibleRepositories = [repo1, repo2, etc...]
+    VisibleRepositories = [repo1.Name, repo2.Name, etc...]
 ```
 
 ### How to use it?

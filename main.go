@@ -105,7 +105,7 @@ func main() {
 			if !utils.IsGitRepository(currentDir) {
 				log.Fatalf("%s is not a git repository!\n", currentDir)
 			}
-			if err := configurationFileStructure.Process(); err != nil {
+			if err := configurationFileStructure.Extract(); err != nil {
 				traces.ErrorTracer.Fatalln(err)
 			}
 			// If the path is/contains a .git directory, add this one as a VISIBLE repository
@@ -127,7 +127,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("There was an error retrieving your git repositories: '%s'\n", err)
 			}
-			if err := configurationFileStructure.Process(); err != nil {
+			if err := configurationFileStructure.Extract(); err != nil {
 				traces.ErrorTracer.Fatalln(err)
 			}
 			// For each git repository, check if it exists, and if not add it to the default target visibility
@@ -206,7 +206,7 @@ func main() {
 				log.Fatalln("Needs a repository name!")
 			}
 			repo := args[0]
-			if err := configurationFileStructure.Process(); err != nil {
+			if err := configurationFileStructure.Extract(); err != nil {
 				traces.ErrorTracer.Fatalln(err)
 			}
 			repoPath := configurationFileStructure.GetPathFromRepository(repo)
@@ -226,7 +226,7 @@ func main() {
 		Short:   "Get the state of each local visible git repository",
 		Long:    "Check only visible git repositories.\nIf some repository names have been setted, goyave will only check those repositories, otherwise it checks all visible repositories of your system.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := configurationFileStructure.Process(); err != nil {
+			if err := configurationFileStructure.Extract(); err != nil {
 				traces.ErrorTracer.Fatalln(err)
 			}
 			var gitStructs []configurationFile.GitRepository
@@ -270,7 +270,7 @@ func main() {
 			if err != nil {
 				log.Fatalln("There was a problem retrieving the current directory")
 			}
-			if err := configurationFileStructure.Process(); err != nil {
+			if err := configurationFileStructure.Extract(); err != nil {
 				traces.ErrorTracer.Fatalln(err)
 			}
 			if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.VisibleFlag); err == nil {
