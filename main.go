@@ -1,22 +1,19 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
+	"sort"
 
 	"sync"
-
-	"sort"
 
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/configurationFile"
 	"github.com/k0pernicus/goyave/consts"
-	"github.com/k0pernicus/goyave/gitManip"
 	"github.com/k0pernicus/goyave/traces"
 	"github.com/k0pernicus/goyave/utils"
 	"github.com/k0pernicus/goyave/walk"
@@ -93,27 +90,27 @@ func main() {
 
 	/*addCmd is a subcommand to add the current working directory as a VISIBLE one
 	 */
-	var addCmd = &cobra.Command{
-		Use:   "add",
-		Short: "Add the current path as a VISIBLE repository",
-		Run: func(cmd *cobra.Command, args []string) {
-			// Get the path where the command has been executed
-			currentDir, err := os.Getwd()
-			if err != nil {
-				log.Fatalln("There was a problem retrieving the current directory")
-			}
-			if !utils.IsGitRepository(currentDir) {
-				log.Fatalf("%s is not a git repository!\n", currentDir)
-			}
-			if err := configurationFileStructure.Extract(); err != nil {
-				traces.ErrorTracer.Fatalln(err)
-			}
-			// If the path is/contains a .git directory, add this one as a VISIBLE repository
-			if err := configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag); err != nil {
-				traces.WarningTracer.Printf("[%s] %s\n", currentDir, err)
-			}
-		},
-	}
+	// var addCmd = &cobra.Command{
+	// 	Use:   "add",
+	// 	Short: "Add the current path as a VISIBLE repository",
+	// 	Run: func(cmd *cobra.Command, args []string) {
+	// 		// Get the path where the command has been executed
+	// 		currentDir, err := os.Getwd()
+	// 		if err != nil {
+	// 			log.Fatalln("There was a problem retrieving the current directory")
+	// 		}
+	// 		if !utils.IsGitRepository(currentDir) {
+	// 			log.Fatalf("%s is not a git repository!\n", currentDir)
+	// 		}
+	// 		if err := configurationFileStructure.Extract(); err != nil {
+	// 			traces.ErrorTracer.Fatalln(err)
+	// 		}
+	// 		// If the path is/contains a .git directory, add this one as a VISIBLE repository
+	// 		if err := configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag); err != nil {
+	// 			traces.WarningTracer.Printf("[%s] %s\n", currentDir, err)
+	// 		}
+	// 	},
+	// }
 
 	/*crawlCmd is a subcommand to crawl your hard drive in order to get and save new git repositories
 	 */
@@ -127,7 +124,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("There was an error retrieving your git repositories: '%s'\n", err)
 			}
-			if err := configurationFileStructure.Extract(); err != nil {
+			if err := configurationFileStructure.Extract(false); err != nil {
 				traces.ErrorTracer.Fatalln(err)
 			}
 			// For each git repository, check if it exists, and if not add it to the default target visibility
@@ -146,77 +143,77 @@ func main() {
 
 	/*loadCmd permits to load visible repositories from the goyave configuration file
 	 */
-	var loadCmd = &cobra.Command{
-		Use:   "load",
-		Short: "Load the configuration file to restore your previous work space",
-		Run: func(cmd *cobra.Command, args []string) {
-			currentLocalhost := utils.GetLocalhost()
-			fmt.Printf("Current localhost is %s\n", currentLocalhost)
-			configGroups := configurationFileStructure.Groups
-			var visibleRepositories []string
-			for {
-				index := utils.SliceIndex(len(configGroups), func(i int) bool { return configGroups[i].Name == currentLocalhost })
-				if index == -1 {
-					traces.WarningTracer.Printf("Your current local host (%s) has not been found!", currentLocalhost)
-					fmt.Println("Please to choose one of those, to load the configuration file:")
-					for _, group := range configGroups {
-						fmt.Printf("\t%s\n", group.Name)
-					}
-					scanner := bufio.NewScanner(os.Stdin)
-					currentLocalhost = scanner.Text()
-					continue
-				} else {
-					visibleRepositories = configurationFileStructure.Groups[index].VisibleRepositories
-				}
-				break
-			}
-			traces.InfoTracer.Printf("Importing configuration from group %s\n", currentLocalhost)
-			for _, visibleRepository := range visibleRepositories {
-				traces.InfoTracer.Printf("* Importing %s...\n", visibleRepository)
-				index := utils.SliceIndex(len(configurationFileStructure.Repositories), func(i int) bool { return configurationFileStructure.Repositories[i].Name == visibleRepository })
-				// Check the local path, and the remote URL
-				if index == -1 {
-					traces.WarningTracer.Printf("\tThe repository \"%s\" does not exists in your configuration file.\n", visibleRepository)
-					continue
-				}
-				// Check if the repository exists locally
-				pathRepository, URLRepository := configurationFileStructure.Repositories[index].Path, configurationFileStructure.Repositories[index].URL
-				if _, err := os.Stat(pathRepository); err == nil {
-					traces.InfoTracer.Printf("\tThe repository \"%s\" already exists as a local git repository.\n", visibleRepository)
-					continue
-				}
-				// If it does not exists, clone it
-				if err := gitManip.Clone(pathRepository, URLRepository); err != nil {
-					traces.ErrorTracer.Printf("\tThe repository \"%s\" can't be cloned: %s\n", visibleRepository, err)
-				} else {
-					traces.InfoTracer.Printf("\tThe repository \"%s\" has been successfully cloned!\n", visibleRepository)
-				}
-			}
-		},
-	}
+	// var loadCmd = &cobra.Command{
+	// 	Use:   "load",
+	// 	Short: "Load the configuration file to restore your previous work space",
+	// 	Run: func(cmd *cobra.Command, args []string) {
+	// 		currentLocalhost := utils.GetLocalhost()
+	// 		fmt.Printf("Current localhost is %s\n", currentLocalhost)
+	// 		configGroups := configurationFileStructure.Groups
+	// 		var visibleRepositories []string
+	// 		for {
+	// 			index := utils.SliceIndex(len(configGroups), func(i int) bool { return configGroups[i].Name == currentLocalhost })
+	// 			if index == -1 {
+	// 				traces.WarningTracer.Printf("Your current local host (%s) has not been found!", currentLocalhost)
+	// 				fmt.Println("Please to choose one of those, to load the configuration file:")
+	// 				for _, group := range configGroups {
+	// 					fmt.Printf("\t%s\n", group.Name)
+	// 				}
+	// 				scanner := bufio.NewScanner(os.Stdin)
+	// 				currentLocalhost = scanner.Text()
+	// 				continue
+	// 			} else {
+	// 				visibleRepositories = configurationFileStructure.Groups[index].VisibleRepositories
+	// 			}
+	// 			break
+	// 		}
+	// 		traces.InfoTracer.Printf("Importing configuration from group %s\n", currentLocalhost)
+	// 		for _, visibleRepository := range visibleRepositories {
+	// 			traces.InfoTracer.Printf("* Importing %s...\n", visibleRepository)
+	// 			index := utils.SliceIndex(len(configurationFileStructure.Repositories), func(i int) bool { return configurationFileStructure.Repositories[i].Name == visibleRepository })
+	// 			// Check the local path, and the remote URL
+	// 			if index == -1 {
+	// 				traces.WarningTracer.Printf("\tThe repository \"%s\" does not exists in your configuration file.\n", visibleRepository)
+	// 				continue
+	// 			}
+	// 			// Check if the repository exists locally
+	// 			pathRepository, URLRepository := configurationFileStructure.Repositories[index].Path, configurationFileStructure.Repositories[index].URL
+	// 			if _, err := os.Stat(pathRepository); err == nil {
+	// 				traces.InfoTracer.Printf("\tThe repository \"%s\" already exists as a local git repository.\n", visibleRepository)
+	// 				continue
+	// 			}
+	// 			// If it does not exists, clone it
+	// 			if err := gitManip.Clone(pathRepository, URLRepository); err != nil {
+	// 				traces.ErrorTracer.Printf("\tThe repository \"%s\" can't be cloned: %s\n", visibleRepository, err)
+	// 			} else {
+	// 				traces.InfoTracer.Printf("\tThe repository \"%s\" has been successfully cloned!\n", visibleRepository)
+	// 			}
+	// 		}
+	// 	},
+	// }
 
 	/*pathCmd is a subcommand to get the path of a given git repository.
 	 *This subcommand is useful to change directory, like `cd $(goyave path mygitrepo)`
 	 */
-	var pathCmd = &cobra.Command{
-		Use:   "path",
-		Short: "Get the path of a given repository, if this one exists",
-		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) == 0 {
-				log.Fatalln("Needs a repository name!")
-			}
-			repo := args[0]
-			if err := configurationFileStructure.Extract(); err != nil {
-				traces.ErrorTracer.Fatalln(err)
-			}
-			repoPath := configurationFileStructure.GetPathFromRepository(repo)
-			if repoPath != "" {
-				fmt.Println(repoPath)
-			} else {
-				log.Fatalf("The repository %s does not exists!\n", repo)
-			}
-		},
-	}
+	// var pathCmd = &cobra.Command{
+	// 	Use:   "path",
+	// 	Short: "Get the path of a given repository, if this one exists",
+	// 	Run: func(cmd *cobra.Command, args []string) {
+	// 		if len(args) == 0 {
+	// 			log.Fatalln("Needs a repository name!")
+	// 		}
+	// 		repo := args[0]
+	// 		if err := configurationFileStructure.Extract(); err != nil {
+	// 			traces.ErrorTracer.Fatalln(err)
+	// 		}
+	// 		repoPath := configurationFileStructure.GetPathFromRepository(repo)
+	// 		if repoPath != "" {
+	// 			fmt.Println(repoPath)
+	// 		} else {
+	// 			log.Fatalf("The repository %s does not exists!\n", repo)
+	// 		}
+	// 	},
+	// }
 
 	/*stateCmd is a subcommand to list the state of each local git repository.
 	 */
@@ -226,7 +223,7 @@ func main() {
 		Short:   "Get the state of each local visible git repository",
 		Long:    "Check only visible git repositories.\nIf some repository names have been setted, goyave will only check those repositories, otherwise it checks all visible repositories of your system.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := configurationFileStructure.Extract(); err != nil {
+			if err := configurationFileStructure.Extract(true); err != nil {
 				traces.ErrorTracer.Fatalln(err)
 			}
 			var gitStructs []configurationFile.GitRepository
@@ -251,7 +248,7 @@ func main() {
 				wg.Add(1)
 				go func(gitStruct configurationFile.GitRepository) {
 					defer wg.Done()
-					gitStruct.Init()
+					gitStruct.Init(gitStruct.Path)
 					gitStruct.GitObject.Status()
 				}(gitStruct)
 			}
@@ -261,33 +258,33 @@ func main() {
 
 	/*switchCmd is a subcommand to switch the visibility of the current git repository.
 	 */
-	var switchCmd = &cobra.Command{
-		Use:   "switch",
-		Short: "Switch the visibility of the current git repository (given by the current path)",
-		Run: func(cmd *cobra.Command, args []string) {
-			// Get the path where the command has been executed
-			currentDir, err := os.Getwd()
-			if err != nil {
-				log.Fatalln("There was a problem retrieving the current directory")
-			}
-			if err := configurationFileStructure.Extract(); err != nil {
-				traces.ErrorTracer.Fatalln(err)
-			}
-			if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.VisibleFlag); err == nil {
-				configurationFileStructure.AddRepository(currentDir, consts.HiddenFlag)
-				traces.InfoTracer.Printf("%s has been set to an hidden repository!", currentDir)
-				return
-			}
-			if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.HiddenFlag); err == nil {
-				configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag)
-				traces.InfoTracer.Printf("%s has been set to a visible repository!", currentDir)
-				return
-			}
-			log.Fatalf("The repository %s is not saved as a VISIBLE or HIDDEN repository! Please to add it before.\n", currentDir)
-		},
-	}
+	// var switchCmd = &cobra.Command{
+	// 	Use:   "switch",
+	// 	Short: "Switch the visibility of the current git repository (given by the current path)",
+	// 	Run: func(cmd *cobra.Command, args []string) {
+	// 		// Get the path where the command has been executed
+	// 		currentDir, err := os.Getwd()
+	// 		if err != nil {
+	// 			log.Fatalln("There was a problem retrieving the current directory")
+	// 		}
+	// 		if err := configurationFileStructure.Extract(); err != nil {
+	// 			traces.ErrorTracer.Fatalln(err)
+	// 		}
+	// 		if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.VisibleFlag); err == nil {
+	// 			configurationFileStructure.AddRepository(currentDir, consts.HiddenFlag)
+	// 			traces.InfoTracer.Printf("%s has been set to an hidden repository!", currentDir)
+	// 			return
+	// 		}
+	// 		if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.HiddenFlag); err == nil {
+	// 			configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag)
+	// 			traces.InfoTracer.Printf("%s has been set to a visible repository!", currentDir)
+	// 			return
+	// 		}
+	// 		log.Fatalf("The repository %s is not saved as a VISIBLE or HIDDEN repository! Please to add it before.\n", currentDir)
+	// 	},
+	// }
 
-	rootCmd.AddCommand(addCmd, crawlCmd, loadCmd, pathCmd, stateCmd, switchCmd)
+	rootCmd.AddCommand(crawlCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
