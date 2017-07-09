@@ -27,21 +27,20 @@ Author = yourSessionAccount
     # * "HIDDEN" - Store each new git repository as a _HIDDEN_ one
     DefaultTarget = "VISIBLE"
     # The group you are using to perform some actions - typically, your hostname
-    Group = yourHostname
+    Group = yourLocalHostname
 
-# A list of visible repositories
-# A visible repository is a repository you want some updates on
-[[visible]]
+# A list of repositories
+# The repository may be visible or hidden, according to the group configuration
+[[repositories]]
     Name = repositoryName
-    Path = repositoryPath
     URL  = remoteURL
+    [[repositories.local]]
+        Name = aLocalHostname
+        Path = theLocalPath
 
-# A list of hidden repositories
-# An hidden repository is a repository you do not want updates on
-[[hidden]]
-    Name = repositoryName
-    Path = repositoryPath
-    URL  = remoteURL
+[[group]]
+    Name = aLocalHostname
+    VisibleRepositories = [repo1, repo2, etc...]
 ```
 
 ### How to use it?
