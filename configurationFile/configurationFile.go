@@ -101,10 +101,24 @@ func (c *ConfigurationFile) GetDefaultEntry() (string, error) {
  *This method uses both methods addVisibleRepository and addHiddenRepository.
  */
 func (c *ConfigurationFile) AddRepository(path string, target string) error {
-	if utils.SliceIndex(len(c.Repositories), func(i int) bool { return c.Repositories[i].Path == path }) != -1 {
-		return errors.New(consts.RepositoryAlreadyExists)
+	repositoryName := filepath.Base(path)
+	repositoryIndex := utils.SliceIndex(len(c.Repositories), func(i int) bool { return c.Repositories[i].Name == repositoryName })
+	// If the repository already exists...
+	if repositoryIndex >= 0 {
+		repositoryGroupsObject := c.Repositories[repositoryIndex].Paths
+		// Check if the path belongs to the local group
+		groupIndex := utils.SliceIndex(len(repositoryGroupsObject), func(i int) bool { return repositoryGroupsObject[i].Name == c.Local.Group })
+		// If yes, stop here
+		if groupIndex != -1 {
+			return nil
+		}
 	}
-	var newRepository = NewGitRepository(filepath.Base(path), path)
+	// If the repository, for the local group, does not exists...
+	newRepository := NewGitRepository(repositoryName, path)
+	newRepository.Paths = append(newRepository.Paths, GroupPath{
+		Name: c.Local.Group,
+		Path: path,
+	})
 	c.Repositories = append(c.Repositories, newRepository)
 	if target == consts.VisibleFlag {
 		c.VisibleRepositories = append(c.VisibleRepositories, newRepository)
@@ -141,8 +155,7 @@ func (c *ConfigurationFile) GetPathFromRepository(target string) string {
 
 /*Extract extracts some useful informations from the current configuration file
  */
-func (c *ConfigurationFile) Extract() error {
-	fmt.Println(c)
+func (c *ConfigurationFile) Extract(criticLevel bool) error {
 	currentGroup := c.Local.Group
 	var visibleRepositories []string
 	for _, group := range c.Groups {
@@ -152,7 +165,7 @@ func (c *ConfigurationFile) Extract() error {
 			visibleRepositories = groupRepositories
 		}
 	}
-	if len(visibleRepositories) == 0 {
+	if len(visibleRepositories) == 0 && criticLevel {
 		return fmt.Errorf("no group %s in your configuration file", currentGroup)
 	}
 	// Sort repositories
@@ -164,9 +177,7 @@ func (c *ConfigurationFile) Extract() error {
 			continue
 		}
 		var cPath string
-		fmt.Println(c.Repositories[index])
 		for _, gPathObject := range c.Repositories[index].Paths {
-			fmt.Printf("%s vs %s\n", gPathObject.Name, currentGroup)
 			if gPathObject.Name == currentGroup {
 				cPath = gPathObject.Path
 			}
@@ -175,7 +186,6 @@ func (c *ConfigurationFile) Extract() error {
 			traces.ErrorTracer.Printf("The path for repository %s is not set - please to check your configuration file!\n", visibleRepository)
 			continue
 		}
-		fmt.Printf("Current cPath: %s\n", cPath)
 		c.addVisibleRepository(cPath)
 	}
 	return nil
@@ -212,7 +222,7 @@ func (c *ConfigurationFile) RemoveRepositoryFromSlice(path string, slice string)
 type GitRepository struct {
 	GitObject *gitManip.GitObject `toml:"-"`
 	Name      string
-	Path      string
+	Path      string      `toml:"-"`
 	Paths     []GroupPath `toml:"paths"`
 	URL       string
 }
@@ -240,14 +250,15 @@ func NewGitRepository(name, path string) GitRepository {
 	return GitRepository{
 		GitObject: gitObject,
 		Name:      name,
+		Path:      path,
 		URL:       gitObject.GetRemoteURL(),
 	}
 }
 
 /*Init (re)initializes the GitObject structure
  */
-func (g *GitRepository) Init() {
-	g.GitObject = gitManip.New(g.Path)
+func (g *GitRepository) Init(cPath string) {
+	g.GitObject = gitManip.New(cPath)
 }
 
 /*isExists check if the current path of the git repository is correct or not,
