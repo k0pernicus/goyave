@@ -195,25 +195,25 @@ func main() {
 	/*pathCmd is a subcommand to get the path of a given git repository.
 	 *This subcommand is useful to change directory, like `cd $(goyave path mygitrepo)`
 	 */
-	// var pathCmd = &cobra.Command{
-	// 	Use:   "path",
-	// 	Short: "Get the path of a given repository, if this one exists",
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		if len(args) == 0 {
-	// 			log.Fatalln("Needs a repository name!")
-	// 		}
-	// 		repo := args[0]
-	// 		if err := configurationFileStructure.Extract(); err != nil {
-	// 			traces.ErrorTracer.Fatalln(err)
-	// 		}
-	// 		repoPath := configurationFileStructure.GetPathFromRepository(repo)
-	// 		if repoPath != "" {
-	// 			fmt.Println(repoPath)
-	// 		} else {
-	// 			log.Fatalf("The repository %s does not exists!\n", repo)
-	// 		}
-	// 	},
-	// }
+	var pathCmd = &cobra.Command{
+		Use:   "path",
+		Short: "Get the path of a given repository, if this one exists",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				log.Fatalln("Needs a repository name!")
+			}
+			repo := args[0]
+			if err := configurationFileStructure.Extract(true); err != nil {
+				traces.ErrorTracer.Fatalln(err)
+			}
+			repoPath := configurationFileStructure.GetPathFromRepository(repo)
+			if repoPath != "" {
+				fmt.Println(repoPath)
+			} else {
+				log.Fatalf("The repository %s does not exists!\n", repo)
+			}
+		},
+	}
 
 	/*stateCmd is a subcommand to list the state of each local git repository.
 	 */
@@ -284,7 +284,7 @@ func main() {
 	// 	},
 	// }
 
-	rootCmd.AddCommand(crawlCmd, stateCmd)
+	rootCmd.AddCommand(crawlCmd, pathCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
