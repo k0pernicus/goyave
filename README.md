@@ -9,6 +9,10 @@ It creates and updates a TOML file (in your `$HOME`), to perform the speed-up of
 `goyave` allows you to get some informations about _dirty_ git repositories in your system (a _dirty_ repository is a repository that contains non-commited files, modified files, etc...).   
 In order to get updates on repositories you are interested in, `goyave` uses a binary system that consists in telling him what are the repositories you are interested for (in this project, we call them _VISIBLE_ repositories).
 
+### Screenshot
+
+![Simple screenshot](./pictures/goyave.png)
+
 ### The configuration file
 
 The configuration file is available at `$HOME/.goyave`.
