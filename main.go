@@ -34,13 +34,13 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
 	// Get the user home directory
 	userHomeDir = utils.GetUserHomeDir()
 	if len(userHomeDir) == 0 {
-		log.Fatalf("Cannot get the user home dir.\n")
+		log.Fatalf("cant get the user home dir\n")
 	}
 	// Set the configuration path file
 	configurationFilePath = path.Join(userHomeDir, consts.ConfigurationFileName)
 	filePointer, err := os.OpenFile(configurationFilePath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
-		log.Fatalf("Cannot open the file %s, due to error '%s'.\n", configurationFilePath, err)
+		log.Fatalf("cant open the file %s, due to error '%s'\n", configurationFilePath, err)
 	}
 	defer filePointer.Close()
 	var bytesArray []byte
@@ -64,10 +64,10 @@ func kill() {
 	}
 	configurationFileStructure.Groups[currentGroupIndex].VisibleRepositories = newVisibleRepositories
 	if err := configurationFileStructure.Encode(&outputBuffer); err != nil {
-		log.Fatalln("Cannot save the current configurationFile structure!")
+		log.Fatalln("can't save the current configurationFile structure")
 	}
 	if err := ioutil.WriteFile(configurationFilePath, outputBuffer.Bytes(), 0777); err != nil {
-		log.Fatalln("Cannot access to your file to save the configurationFile structure!")
+		log.Fatalln("can't access to your file to save the configurationFile structure")
 	}
 }
 
@@ -122,7 +122,7 @@ func main() {
 			// Get all git paths, and display them
 			gitPaths, err := walk.RetrieveGitRepositories(userHomeDir)
 			if err != nil {
-				log.Fatalf("There was an error retrieving your git repositories: '%s'\n", err)
+				log.Fatalf("there was an error retrieving your git repositories: '%s'\n", err)
 			}
 			if err := configurationFileStructure.Extract(false); err != nil {
 				traces.ErrorTracer.Fatalln(err)
@@ -210,7 +210,7 @@ func main() {
 			if repoPath != "" {
 				fmt.Println(repoPath)
 			} else {
-				log.Fatalf("The repository %s does not exists!\n", repo)
+				log.Fatalf("the repository %s does not exists\n", repo)
 			}
 		},
 	}
@@ -265,22 +265,42 @@ func main() {
 	// 		// Get the path where the command has been executed
 	// 		currentDir, err := os.Getwd()
 	// 		if err != nil {
-	// 			log.Fatalln("There was a problem retrieving the current directory")
+	// 			log.Fatalln("there was a problem retrieving the current directory")
 	// 		}
-	// 		if err := configurationFileStructure.Extract(); err != nil {
+	// 		if err := configurationFileStructure.Extract(true); err != nil {
 	// 			traces.ErrorTracer.Fatalln(err)
 	// 		}
-	// 		if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.VisibleFlag); err == nil {
-	// 			configurationFileStructure.AddRepository(currentDir, consts.HiddenFlag)
-	// 			traces.InfoTracer.Printf("%s has been set to an hidden repository!", currentDir)
-	// 			return
+	// 		// Recognizing the repository in the configuration file
+	// 		repositoryName := filepath.Base(currentDir)
+	// 		localRepositories := configurationFileStructure.Repositories
+	// 		repositoryPathIndex := utils.SliceIndex(len(localRepositories), func(i int) bool { return localRepositories[i].Name == repositoryName })
+	// 		if repositoryPathIndex == -1 {
+	// 			log.Fatalf("the repository '%s' does not exists in the configuration file", filepath.Base(currentDir))
+	// 			os.Exit(2)
 	// 		}
-	// 		if err := configurationFileStructure.RemoveRepositoryFromSlice(currentDir, consts.HiddenFlag); err == nil {
+	// 		repositoryGroupIndex := utils.SliceIndex(len(localRepositories[repositoryPathIndex].Paths), func(i int) bool { return localRepositories[repositoryPathIndex].Paths[i].Path == currentDir })
+	// 		if repositoryGroupIndex == -1 {
+	// 			log.Fatalf("the file path '%s' does not exists in the configuration file", currentDir)
+	// 			os.Exit(2)
+	// 		}
+	// 		// The repository is now recognized
+	// 		currentGroupName := utils.GetLocalhost()
+	// 		groupIndex := utils.SliceIndex(len(configurationFileStructure.Groups), func(i int) bool { return configurationFileStructure.Groups[i].Name == currentGroupName })
+	// 		if groupIndex == -1 {
+	// 			log.Fatalln("your localhost is not recognized, please to crawl first")
+	// 			os.Exit(2)
+	// 		}
+	// 		visibleRepositories := configurationFileStructure.VisibleRepositories
+	// 		// visibleRepositories := configurationFileStructure.Groups[groupIndex].VisibleRepositories
+	// 		repositoryIndex := utils.SliceIndex(len(visibleRepositories), func(i int) bool { return visibleRepositories[i].Name == repositoryName })
+	// 		if repositoryIndex == -1 {
 	// 			configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag)
-	// 			traces.InfoTracer.Printf("%s has been set to a visible repository!", currentDir)
-	// 			return
+	// 			fmt.Printf("The repository %s has been added!\n", repositoryName)
+	// 		} else {
+	// 			configurationFileStructure.VisibleRepositories = append(visibleRepositories[:repositoryIndex], visibleRepositories[repositoryIndex+1:]...)
+	// 			fmt.Printf("The repository %s has been removed!\n", repositoryName)
 	// 		}
-	// 		log.Fatalf("The repository %s is not saved as a VISIBLE or HIDDEN repository! Please to add it before.\n", currentDir)
+	// 		fmt.Println(configurationFileStructure.VisibleRepositories)
 	// 	},
 	// }
 
