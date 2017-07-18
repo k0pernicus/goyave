@@ -73,6 +73,27 @@ func Clone(path, URL string) error {
 	return err
 }
 
+/*GetRemoteURL returns the associated remote URL of a given local path repository
+ *
+ * It needs:
+ *	path
+ *		The local path of a git repository
+ */
+func GetRemoteURL(path string) string {
+	r, err := git.OpenRepository(path)
+	if err != nil {
+		fmt.Println("The repository can't be opened")
+		return ""
+	}
+	remoteCollection := r.Remotes
+	originRemote, err := remoteCollection.Lookup("origin")
+	if err != nil {
+		fmt.Println("Cannot lookup to origin")
+		return ""
+	}
+	return originRemote.Url()
+}
+
 /*GetRemoteURL returns the URL from the Origin remote branch.
  *If the branch can't be reached, the function returns an empty string.
  */

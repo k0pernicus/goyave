@@ -7,19 +7,15 @@ package configurationFile
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
-	"path/filepath"
+	"os"
+	"os/user"
 
 	"fmt"
 
-	"os/user"
+	"path/filepath"
 
-	"os"
-
-	"strings"
-
-	"sort"
+	"sync"
 
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/consts"
@@ -37,7 +33,15 @@ func GetConfigurationFileContent(filePointer *os.File, bytesArray *[]byte) {
 	if err != nil || fileState.Size() == 0 {
 		traces.WarningTracer.Println("No (or empty) configuration file - creating default one...")
 		var fileBuffer bytes.Buffer
-		defaultStructure := Default()
+		cLocalhost := utils.GetLocalhost()
+		cUser, err := user.Current()
+		var cUserName string
+		if err != nil {
+			cUserName = consts.DefaultUserName
+		} else {
+			cUserName = cUser.Username
+		}
+		defaultStructure := Default(cUserName, cLocalhost)
 		defaultStructure.Encode(&fileBuffer)
 		*bytesArray = fileBuffer.Bytes()
 	} else {
@@ -46,260 +50,159 @@ func GetConfigurationFileContent(filePointer *os.File, bytesArray *[]byte) {
 	}
 }
 
-/*ConfigurationFile represents the TOML structure of the Goyave configuration file.
+/*ConfigurationFile represents the TOML structure of the Goyave configuration file
  *
- *The structure of the configuration file is:
+ *Properties:
  *	Author:
- *		The name of the user.
+ *		The name of the user
+ *  Local:
+ *		Local informations
+ *  Repositories:
+ *		Local git repositories
  *	VisibleRepositories:
- *		A list of local visible git repositories.
- *	HiddenRepositories:
- *		A list of local ignored git repositories.
+ *		A list of local ** visible ** git repositories (** used localy **)
  *	Groups:
- *		A list of groups.
+ *		A list of groups
+ *	locker:
+ *		Mutex to perform concurrent RW on map data structures
  */
 type ConfigurationFile struct {
 	Author              string
-	Local               LocalInformations `toml:"local"`
-	Repositories        []GitRepository   `toml:"repositories"`
-	VisibleRepositories []GitRepository   `toml:"-"`
-	Groups              []Group           `toml:"group"`
+	Local               LocalInformations        `toml:"local"`
+	Repositories        map[string]GitRepository `toml:"repositories"`
+	VisibleRepositories VisibleRepositories      `toml:"-"`
+	Groups              map[string]Group         `toml:"group"`
+	locker              sync.RWMutex             `toml:"-"`
 }
 
-/*Default returns a default ConfigurationFile structure.
+/*Default is a constructor for ConfigurationFile
+ *
+ *Parameters:
+ *	author:
+ *		The name of the user
+ *  hostname:
+ *		The machine hostname
  */
-func Default() *ConfigurationFile {
-	usr, _ := user.Current()
-	localhost := utils.GetLocalhost()
+func Default(author string, hostname string) *ConfigurationFile {
 	return &ConfigurationFile{
-		Author: usr.Username,
+		Author: author,
 		Local: LocalInformations{
 			DefaultTarget: consts.VisibleFlag,
-			Group:         localhost,
+			Group:         hostname,
 		},
-		Groups: []Group{
-			Group{
-				Name:                localhost,
-				VisibleRepositories: []string{},
-			},
+		Groups: map[string]Group{
+			hostname: []string{},
 		},
 	}
 }
 
-/*GetDefaultEntry returns the default entry to store a new git repository.
- *This methods returns HiddenFlag, or VisibleFlag
+/*Process initializes useful fields in the data structure
  */
-func (c *ConfigurationFile) GetDefaultEntry() (string, error) {
-	defaultTarget := c.Local.DefaultTarget
-	if defaultTarget != consts.VisibleFlag && defaultTarget != consts.HiddenFlag {
-		return consts.VisibleFlag, fmt.Errorf("the default target is not set to %s or %s. Please check your configuration file", consts.HiddenFlag, consts.VisibleFlag)
+func (c *ConfigurationFile) Process() error {
+	// If the configuration file is new, initialize the map and finish here
+	if c.Repositories == nil {
+		c.Repositories = make(map[string]GitRepository)
+		return nil
 	}
-	return defaultTarget, nil
+	// Otherwise, initialize useful fields
+	hostname := utils.GetLocalhost()
+	vrepositories, ok := c.Groups[hostname]
+	if !ok {
+		return fmt.Errorf("the hostname %s has not been found - please to launch 'crawl' before", hostname)
+	}
+	c.VisibleRepositories = make(VisibleRepositories)
+	for _, repository := range vrepositories {
+		c.VisibleRepositories[repository] = c.Repositories[repository].Paths[hostname].Path
+	}
+	return nil
 }
 
-/*AddRepository will add a single path in the TOML's target if the path does not exists.
- *This method uses both methods addVisibleRepository and addHiddenRepository.
+/*AddRepository append the given repository to the list of local repositories, if it does not exists
  */
-func (c *ConfigurationFile) AddRepository(path string, target string) error {
-	repositoryName := filepath.Base(path)
-	repositoryIndex := utils.SliceIndex(len(c.Repositories), func(i int) bool { return c.Repositories[i].Name == repositoryName })
-	// If the repository already exists...
-	if repositoryIndex >= 0 {
-		repositoryGroupsObject := c.Repositories[repositoryIndex].Paths
-		// Check if the path belongs to the local group
-		groupIndex := utils.SliceIndex(len(repositoryGroupsObject), func(i int) bool { return repositoryGroupsObject[i].Name == c.Local.Group })
-		// If yes, stop here
-		if groupIndex != -1 {
-			return nil
-		}
+func (c *ConfigurationFile) AddRepository(path, target string) error {
+	name := filepath.Base(path)
+	hostname := utils.GetLocalhost()
+	c.locker.Lock()
+	defer c.locker.Unlock()
+	robj, ok := c.Repositories[name]
+	// If the repository exists and the path is ok, stop
+	if ok && robj.Paths[hostname].Path == path {
+		return nil
 	}
-	// If the repository, for the local group, does not exists...
-	newRepository := NewGitRepository(repositoryName, path)
-	newRepository.Paths = append(newRepository.Paths, GroupPath{
-		Name: c.Local.Group,
+	// Initialize the new GroupPath structure
+	cgroup := GroupPath{
+		Name: name,
 		Path: path,
-	})
-	c.Repositories = append(c.Repositories, newRepository)
-	if target == consts.VisibleFlag {
-		c.VisibleRepositories = append(c.VisibleRepositories, newRepository)
+	}
+	// If the repository exists but the path is not ok, update it
+	if ok {
+		robj.Paths[hostname] = cgroup
+		return nil
+	}
+	// Otherwise, create a new GitRepository structure, and append it in the Repositories field
+	c.Repositories[name] = GitRepository{
+		Name: name,
+		Paths: map[string]GroupPath{
+			hostname: cgroup,
+		},
+		URL: gitManip.GetRemoteURL(path),
 	}
 	return nil
 }
 
-/*addVisibleRepository adds a given git repo path as a visible repository.
- *If the repository already exists in the VisibleRepository field, the method throws an error: RepositoryAlreadyExists.
- *Else, the repository is append to the VisibleRepository field, and the method returns nil.
+/*VisibleRepositories is a map structure to store, for each repository name (and the hostname), the associated path
  */
-func (c *ConfigurationFile) addVisibleRepository(path string) error {
-	for _, registeredRepository := range c.VisibleRepositories {
-		if registeredRepository.Path == path {
-			return errors.New(consts.RepositoryAlreadyExists)
-		}
+type VisibleRepositories map[string]string
+
+/*Method that returns if a repository, identified by his name and his path (optional), exists in the given structure
+ * If path is empty (empty string), the function will only check the name
+ */
+func (v VisibleRepositories) exists(name, path string) bool {
+	_, ok := v[name]
+	if !ok || path == "" {
+		return ok
 	}
-	var newVisibleRepository = NewGitRepository(filepath.Base(path), path)
-	c.VisibleRepositories = append(c.VisibleRepositories, newVisibleRepository)
-	return nil
+	return v[name] == path
 }
 
-/*GetPathFromRepository returns the path of a given git repository name.
- *If the repository does not exists, it returns an empty string.
- */
-func (c *ConfigurationFile) GetPathFromRepository(target string) string {
-	for _, registeredRepository := range c.VisibleRepositories {
-		if registeredRepository.Name == target {
-			return registeredRepository.Path
-		}
-	}
-	return ""
-}
-
-/*Extract extracts some useful informations from the current configuration file
- */
-func (c *ConfigurationFile) Extract(criticLevel bool) error {
-	currentGroup := c.Local.Group
-	var visibleRepositories []string
-	for _, group := range c.Groups {
-		groupName := group.Name
-		groupRepositories := group.VisibleRepositories
-		if groupName == currentGroup {
-			visibleRepositories = groupRepositories
-		}
-	}
-	if len(visibleRepositories) == 0 && criticLevel {
-		return fmt.Errorf("no group %s in your configuration file", currentGroup)
-	}
-	// Sort repositories
-	sort.Sort(ByName(c.Repositories))
-	for _, visibleRepository := range visibleRepositories {
-		index := utils.SliceIndex(len(c.Repositories), func(i int) bool { return c.Repositories[i].Name == visibleRepository })
-		if index == -1 {
-			traces.WarningTracer.Printf("Repository %s has not been found!", visibleRepository)
-			continue
-		}
-		var cPath string
-		for _, gPathObject := range c.Repositories[index].Paths {
-			if gPathObject.Name == currentGroup {
-				cPath = gPathObject.Path
-			}
-		}
-		if len(cPath) == 0 {
-			traces.ErrorTracer.Printf("The path for repository %s is not set - please to check your configuration file!\n", visibleRepository)
-			continue
-		}
-		c.addVisibleRepository(cPath)
-	}
-	return nil
-}
-
-/*RemoveRepositoryFromSlice returns a new slice without the corresponding element (here, a string).
- *If the element is not found, this method returns an error.
- */
-func (c *ConfigurationFile) RemoveRepositoryFromSlice(path string, slice string) error {
-	// The code below is the same for visible and hidden repositories - need to refactor the code later
-	if slice == consts.VisibleFlag {
-		sliceIndex := utils.SliceIndex(len(c.VisibleRepositories), func(i int) bool { return c.VisibleRepositories[i].Path == path })
-		if sliceIndex != -1 {
-			c.VisibleRepositories = append(c.VisibleRepositories[:sliceIndex], c.VisibleRepositories[sliceIndex+1:]...)
-			return nil
-		}
-		return errors.New(consts.ItemIsNotInSlice)
-	}
-	return errors.New(consts.ItemIsNotInSlice)
-}
-
-/*GitRepository represents the structure of a local git repository.
+/*GitRepository represents the structure of a local git repository
  *
- *Properties of this structure are:
- *	GitObject:
- *		A reference to a git structure that represents the repository - ignored in the TOML file.
+ *Properties:
  *	Name:
- * 		The custom name of the repository.
- *	Path:
- *		The path of the repository.
+ * 		The custom name of the repository
+ *  Paths:
+ *		Path per group name
  *	URL:
- *		The remote URL of the repository (from origin).
+ *		The remote URL of the repository (from origin)
  */
 type GitRepository struct {
-	GitObject *gitManip.GitObject `toml:"-"`
-	Name      string
-	Path      string      `toml:"-"`
-	Paths     []GroupPath `toml:"paths"`
-	URL       string
+	Name  string               `toml:"name"`
+	Paths map[string]GroupPath `toml:"paths"`
+	URL   string               `toml:"url"`
 }
 
-/*ByName implements sort.Interface for []GitRepository based on the Name field.
- */
-type ByName []GitRepository
-
-/*Len returns the length of the ByName type object.
- */
-func (g ByName) Len() int { return len(g) }
-
-/*Swap swaps two objects in the same array.
- */
-func (g ByName) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
-
-/*Less returns True if the first element is lower than the second one (alphabetic order).
- */
-func (g ByName) Less(i, j int) bool { return strings.Compare(g[i].Name, g[j].Name) == -1 }
-
-/*NewGitRepository instantiates the GitRepository struct, based on the path information.
- */
-func NewGitRepository(name, path string) GitRepository {
-	gitObject := gitManip.New(path)
-	return GitRepository{
-		GitObject: gitObject,
-		Name:      name,
-		Path:      path,
-		URL:       gitObject.GetRemoteURL(),
-	}
-}
-
-/*Init (re)initializes the GitObject structure
- */
-func (g *GitRepository) Init(cPath string) {
-	g.GitObject = gitManip.New(cPath)
-}
-
-/*isExists check if the current path of the git repository is correct or not,
- *and if the current repository exists again or not.
- *This methods returns a boolean value.
- */
-func (g *GitRepository) isExists() bool {
-	_, err := os.Stat(g.Path)
-	return os.IsNotExist(err)
-}
-
-/*GroupPath represents the structure of a local path, using a given group.
+/*GroupPath represents the structure of a local path, using a given group
  *
- *Properties of this structure are:
+ *Properties:
+ *  Name:
+ *		The name of the local git repository
  *	Path:
- *		A string that points to the local git repository.
+ *		A string that points to the local git repository
  */
 type GroupPath struct {
 	Name string
 	Path string
 }
 
-/*Group represents a group of git repositories.
- *
- *The structure of a Group type is:
- *
- *	Name:
- *		The group name.
- *	Repositories:
- *		A list of git repositories id, tagged in the group.
+/*Group represents a group of git repositories names
  */
-type Group struct {
-	Name                string
-	VisibleRepositories []string
-}
+type Group []string
 
-/*LocalInformations represents your local configuration of Goyave.
+/*LocalInformations represents your local configuration of Goyave
  *
- *The structure contains:
+ *Properties:
  *  DefaultEntry:
- *		The default entry to store a git repository (hidden or visible).
+ *		The default entry to store a git repository (hidden or visible)
  *	Group:
  *		The current group name.
  */
@@ -308,21 +211,21 @@ type LocalInformations struct {
 	Group         string
 }
 
-/*DecodeString is a function to decode an entire string (which is the content of a given TOML file) to a ConfigurationFile structure.
+/*DecodeString is a function to decode an entire string (which is the content of a given TOML file) to a ConfigurationFile structure
  */
 func DecodeString(c *ConfigurationFile, data string) error {
 	_, err := toml.Decode(data, *c)
 	return err
 }
 
-/*DecodeBytesArray is a function to decode an entire string (which is the content of a given TOML file) to a ConfigurationFile structure.
+/*DecodeBytesArray is a function to decode an entire string (which is the content of a given TOML file) to a ConfigurationFile structure
  */
 func DecodeBytesArray(c *ConfigurationFile, data []byte) error {
 	_, err := toml.Decode(string(data[:]), *c)
 	return err
 }
 
-/*Encode is a function to encode a ConfigurationFile structure to a byffer of bytes.
+/*Encode is a function to encode a ConfigurationFile structure to a byffer of bytes
  */
 func (c *ConfigurationFile) Encode(buffer *bytes.Buffer) error {
 	return toml.NewEncoder(buffer).Encode(c)

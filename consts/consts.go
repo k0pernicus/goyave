@@ -2,6 +2,8 @@
  */
 package consts
 
+const DefaultUserName = "Thor"
+
 // VisibleFlag is the constant given for a visible repository
 const VisibleFlag = "VISIBLE"
 

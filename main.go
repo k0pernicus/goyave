@@ -7,8 +7,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"sort"
-
 	"sync"
 
 	"github.com/BurntSushi/toml"
@@ -30,7 +28,6 @@ var userHomeDir string
 func initialize(configurationFileStructure *configurationFile.ConfigurationFile) {
 	// Initialize all different traces structures
 	traces.InitTraces(os.Stdout, os.Stderr, os.Stdout, os.Stdout)
-
 	// Get the user home directory
 	userHomeDir = utils.GetUserHomeDir()
 	if len(userHomeDir) == 0 {
@@ -49,20 +46,23 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
 	if _, err = toml.Decode(string(bytesArray[:]), configurationFileStructure); err != nil {
 		log.Fatalln(err)
 	}
+	if err := configurationFileStructure.Process(); err != nil {
+		log.Fatalln(err)
+	}
 }
 
 /*kill saves the current state of the configuration structure in the configuration file
  */
 func kill() {
 	var outputBuffer bytes.Buffer
-	currentGroupIndex := utils.SliceIndex(len(configurationFileStructure.Groups), func(i int) bool {
-		return configurationFileStructure.Groups[i].Name == configurationFileStructure.Local.Group
-	})
-	var newVisibleRepositories []string
-	for _, visibleRepository := range configurationFileStructure.VisibleRepositories {
-		newVisibleRepositories = append(newVisibleRepositories, visibleRepository.Name)
-	}
-	configurationFileStructure.Groups[currentGroupIndex].VisibleRepositories = newVisibleRepositories
+	// currentGroupIndex := utils.SliceIndex(len(configurationFileStructure.Groups), func(i int) bool {
+	// 	return configurationFileStructure.Groups[i].Name == configurationFileStructure.Local.Group
+	// })
+	// var newVisibleRepositories []string
+	// for _, visibleRepository := range configurationFileStructure.VisibleRepositories {
+	// 	newVisibleRepositories = append(newVisibleRepositories, visibleRepository.Name)
+	// }
+	// configurationFileStructure.Groups[currentGroupIndex].VisibleRepositories = newVisibleRepositories
 	if err := configurationFileStructure.Encode(&outputBuffer); err != nil {
 		log.Fatalln("can't save the current configurationFile structure")
 	}
@@ -85,6 +85,13 @@ func main() {
 		// Save the current configuration file structure, in the configuration file
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			kill()
+		},
+	}
+
+	var initCmd = &cobra.Command{
+		Use:   "init",
+		Short: "Init",
+		Run: func(cmd *cobra.Command, args []string) {
 		},
 	}
 
@@ -124,17 +131,12 @@ func main() {
 			if err != nil {
 				log.Fatalf("there was an error retrieving your git repositories: '%s'\n", err)
 			}
-			if err := configurationFileStructure.Extract(false); err != nil {
-				traces.ErrorTracer.Fatalln(err)
-			}
 			// For each git repository, check if it exists, and if not add it to the default target visibility
 			for _, gitPath := range gitPaths {
 				wg.Add(1)
 				go func(gitPath string) {
 					defer wg.Done()
-					if err := configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget); err != nil {
-						traces.WarningTracer.Printf("[%s] %s\n", gitPath, err)
-					}
+					configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget)
 				}(gitPath)
 			}
 			wg.Wait()
@@ -195,66 +197,66 @@ func main() {
 	/*pathCmd is a subcommand to get the path of a given git repository.
 	 *This subcommand is useful to change directory, like `cd $(goyave path mygitrepo)`
 	 */
-	var pathCmd = &cobra.Command{
-		Use:   "path",
-		Short: "Get the path of a given repository, if this one exists",
-		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) == 0 {
-				log.Fatalln("Needs a repository name!")
-			}
-			repo := args[0]
-			if err := configurationFileStructure.Extract(true); err != nil {
-				traces.ErrorTracer.Fatalln(err)
-			}
-			repoPath := configurationFileStructure.GetPathFromRepository(repo)
-			if repoPath != "" {
-				fmt.Println(repoPath)
-			} else {
-				log.Fatalf("the repository %s does not exists\n", repo)
-			}
-		},
-	}
+	// var pathCmd = &cobra.Command{
+	// 	Use:   "path",
+	// 	Short: "Get the path of a given repository, if this one exists",
+	// 	Run: func(cmd *cobra.Command, args []string) {
+	// 		if len(args) == 0 {
+	// 			log.Fatalln("Needs a repository name!")
+	// 		}
+	// 		repo := args[0]
+	// 		if err := configurationFileStructure.Extract(true); err != nil {
+	// 			traces.ErrorTracer.Fatalln(err)
+	// 		}
+	// 		repoPath := configurationFileStructure.GetPathFromRepository(repo)
+	// 		if repoPath != "" {
+	// 			fmt.Println(repoPath)
+	// 		} else {
+	// 			log.Fatalf("the repository %s does not exists\n", repo)
+	// 		}
+	// 	},
+	// }
 
 	/*stateCmd is a subcommand to list the state of each local git repository.
 	 */
-	var stateCmd = &cobra.Command{
-		Use:     "state",
-		Example: "goyave state\ngoyave state myRepositoryName\ngoyave state myRepositoryName1 myRepositoryName2",
-		Short:   "Get the state of each local visible git repository",
-		Long:    "Check only visible git repositories.\nIf some repository names have been setted, goyave will only check those repositories, otherwise it checks all visible repositories of your system.",
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := configurationFileStructure.Extract(true); err != nil {
-				traces.ErrorTracer.Fatalln(err)
-			}
-			var gitStructs []configurationFile.GitRepository
-			if len(args) == 0 {
-				gitStructs = configurationFileStructure.VisibleRepositories
-			} else {
-				// Sort visible repositories by name
-				sort.Sort(configurationFile.ByName(configurationFileStructure.VisibleRepositories))
-				repositoriesListLength := len(configurationFileStructure.VisibleRepositories)
-				// Looking for given repository names - if the looking one does not exists, let the function prints a warning message.
-				for _, repositoryName := range args {
-					repositoryIndex := sort.Search(repositoriesListLength, func(i int) bool { return configurationFileStructure.VisibleRepositories[i].Name >= repositoryName })
-					if repositoryIndex != repositoriesListLength {
-						gitStructs = append(gitStructs, configurationFileStructure.VisibleRepositories[repositoryIndex])
-					} else {
-						traces.WarningTracer.Printf("%s cannot be found in your visible repositories!\n", repositoryName)
-					}
-				}
-			}
-			var wg sync.WaitGroup
-			for _, gitStruct := range gitStructs {
-				wg.Add(1)
-				go func(gitStruct configurationFile.GitRepository) {
-					defer wg.Done()
-					gitStruct.Init(gitStruct.Path)
-					gitStruct.GitObject.Status()
-				}(gitStruct)
-			}
-			wg.Wait()
-		},
-	}
+	// var stateCmd = &cobra.Command{
+	// 	Use:     "state",
+	// 	Example: "goyave state\ngoyave state myRepositoryName\ngoyave state myRepositoryName1 myRepositoryName2",
+	// 	Short:   "Get the state of each local visible git repository",
+	// 	Long:    "Check only visible git repositories.\nIf some repository names have been setted, goyave will only check those repositories, otherwise it checks all visible repositories of your system.",
+	// 	Run: func(cmd *cobra.Command, args []string) {
+	// 		if err := configurationFileStructure.Extract(true); err != nil {
+	// 			traces.ErrorTracer.Fatalln(err)
+	// 		}
+	// 		var gitStructs []configurationFile.GitRepository
+	// 		if len(args) == 0 {
+	// 			gitStructs = configurationFileStructure.VisibleRepositories
+	// 		} else {
+	// 			// Sort visible repositories by name
+	// 			sort.Sort(configurationFile.ByName(configurationFileStructure.VisibleRepositories))
+	// 			repositoriesListLength := len(configurationFileStructure.VisibleRepositories)
+	// 			// Looking for given repository names - if the looking one does not exists, let the function prints a warning message.
+	// 			for _, repositoryName := range args {
+	// 				repositoryIndex := sort.Search(repositoriesListLength, func(i int) bool { return configurationFileStructure.VisibleRepositories[i].Name >= repositoryName })
+	// 				if repositoryIndex != repositoriesListLength {
+	// 					gitStructs = append(gitStructs, configurationFileStructure.VisibleRepositories[repositoryIndex])
+	// 				} else {
+	// 					traces.WarningTracer.Printf("%s cannot be found in your visible repositories!\n", repositoryName)
+	// 				}
+	// 			}
+	// 		}
+	// 		var wg sync.WaitGroup
+	// 		for _, gitStruct := range gitStructs {
+	// 			wg.Add(1)
+	// 			go func(gitStruct configurationFile.GitRepository) {
+	// 				defer wg.Done()
+	// 				gitStruct.Init(gitStruct.Path)
+	// 				gitStruct.GitObject.Status()
+	// 			}(gitStruct)
+	// 		}
+	// 		wg.Wait()
+	// 	},
+	// }
 
 	/*switchCmd is a subcommand to switch the visibility of the current git repository.
 	 */
@@ -304,7 +306,9 @@ func main() {
 	// 	},
 	// }
 
-	rootCmd.AddCommand(crawlCmd, pathCmd, stateCmd)
+	// rootCmd.AddCommand(crawlCmd, pathCmd, stateCmd)
+
+	rootCmd.AddCommand(initCmd, crawlCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
