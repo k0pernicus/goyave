@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -137,54 +138,49 @@ func main() {
 
 	/*loadCmd permits to load visible repositories from the goyave configuration file
 	 */
-	// var loadCmd = &cobra.Command{
-	// 	Use:   "load",
-	// 	Short: "Load the configuration file to restore your previous work space",
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		currentLocalhost := utils.GetLocalhost()
-	// 		fmt.Printf("Current localhost is %s\n", currentLocalhost)
-	// 		configGroups := configurationFileStructure.Groups
-	// 		var visibleRepositories []string
-	// 		for {
-	// 			index := utils.SliceIndex(len(configGroups), func(i int) bool { return configGroups[i].Name == currentLocalhost })
-	// 			if index == -1 {
-	// 				traces.WarningTracer.Printf("Your current local host (%s) has not been found!", currentLocalhost)
-	// 				fmt.Println("Please to choose one of those, to load the configuration file:")
-	// 				for _, group := range configGroups {
-	// 					fmt.Printf("\t%s\n", group.Name)
-	// 				}
-	// 				scanner := bufio.NewScanner(os.Stdin)
-	// 				currentLocalhost = scanner.Text()
-	// 				continue
-	// 			} else {
-	// 				visibleRepositories = configurationFileStructure.Groups[index].VisibleRepositories
-	// 			}
-	// 			break
-	// 		}
-	// 		traces.InfoTracer.Printf("Importing configuration from group %s\n", currentLocalhost)
-	// 		for _, visibleRepository := range visibleRepositories {
-	// 			traces.InfoTracer.Printf("* Importing %s...\n", visibleRepository)
-	// 			index := utils.SliceIndex(len(configurationFileStructure.Repositories), func(i int) bool { return configurationFileStructure.Repositories[i].Name == visibleRepository })
-	// 			// Check the local path, and the remote URL
-	// 			if index == -1 {
-	// 				traces.WarningTracer.Printf("\tThe repository \"%s\" does not exists in your configuration file.\n", visibleRepository)
-	// 				continue
-	// 			}
-	// 			// Check if the repository exists locally
-	// 			pathRepository, URLRepository := configurationFileStructure.Repositories[index].Path, configurationFileStructure.Repositories[index].URL
-	// 			if _, err := os.Stat(pathRepository); err == nil {
-	// 				traces.InfoTracer.Printf("\tThe repository \"%s\" already exists as a local git repository.\n", visibleRepository)
-	// 				continue
-	// 			}
-	// 			// If it does not exists, clone it
-	// 			if err := gitManip.Clone(pathRepository, URLRepository); err != nil {
-	// 				traces.ErrorTracer.Printf("\tThe repository \"%s\" can't be cloned: %s\n", visibleRepository, err)
-	// 			} else {
-	// 				traces.InfoTracer.Printf("\tThe repository \"%s\" has been successfully cloned!\n", visibleRepository)
-	// 			}
-	// 		}
-	// 	},
-	// }
+	var loadCmd = &cobra.Command{
+		Use:   "load",
+		Short: "Load the configuration file to restore your previous work space",
+		Run: func(cmd *cobra.Command, args []string) {
+			currentHostname := utils.GetHostname()
+			traces.InfoTracer.Printf("Current hostname is %s\n", currentHostname)
+			for {
+				_, ok := configurationFileStructure.Groups[currentHostname]
+				if !ok {
+					traces.WarningTracer.Printf("Your current local host (%s) has not been found!", currentHostname)
+					fmt.Println("Please to choose one of those, to load the configuration file:")
+					for group := range configurationFileStructure.Groups {
+						traces.WarningTracer.Printf("\t%s\n", group)
+					}
+					scanner := bufio.NewScanner(os.Stdin)
+					currentHostname = scanner.Text()
+					continue
+				} else {
+					traces.InfoTracer.Println("Hostname found!")
+				}
+				break
+			}
+			var wg sync.WaitGroup
+			for _, repository := range configurationFileStructure.Repositories {
+				wg.Add(1)
+				go func(repository configurationFile.GitRepository) {
+					defer wg.Done()
+					cName := repository.Name
+					cPath := repository.Paths[currentHostname].Path
+					cURL := repository.URL
+					if _, err := os.Stat(cPath); err == nil {
+						traces.InfoTracer.Printf("the repository \"%s\" already exists as a local git repository\n", cName)
+						return
+					}
+					traces.InfoTracer.Printf("importing %s...\n", cName)
+					if err := gitManip.Clone(cPath, cURL); err != nil {
+						traces.ErrorTracer.Printf("the repository \"%s\" can't be cloned: %s\n", cName, err)
+					}
+				}(repository)
+			}
+			wg.Wait()
+		},
+	}
 
 	/*pathCmd is a subcommand to get the path of a given git repository.
 	 *This subcommand is useful to change directory, like `cd $(goyave path mygitrepo)`
@@ -293,7 +289,7 @@ func main() {
 
 	// rootCmd.AddCommand(crawlCmd, pathCmd, stateCmd)
 
-	rootCmd.AddCommand(addCmd, crawlCmd, initCmd, pathCmd, stateCmd)
+	rootCmd.AddCommand(addCmd, crawlCmd, initCmd, loadCmd, pathCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
