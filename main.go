@@ -12,6 +12,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/k0pernicus/goyave/configurationFile"
 	"github.com/k0pernicus/goyave/consts"
+	"github.com/k0pernicus/goyave/gitManip"
 	"github.com/k0pernicus/goyave/traces"
 	"github.com/k0pernicus/goyave/utils"
 	"github.com/k0pernicus/goyave/walk"
@@ -55,14 +56,6 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
  */
 func kill() {
 	var outputBuffer bytes.Buffer
-	// currentGroupIndex := utils.SliceIndex(len(configurationFileStructure.Groups), func(i int) bool {
-	// 	return configurationFileStructure.Groups[i].Name == configurationFileStructure.Local.Group
-	// })
-	// var newVisibleRepositories []string
-	// for _, visibleRepository := range configurationFileStructure.VisibleRepositories {
-	// 	newVisibleRepositories = append(newVisibleRepositories, visibleRepository.Name)
-	// }
-	// configurationFileStructure.Groups[currentGroupIndex].VisibleRepositories = newVisibleRepositories
 	if err := configurationFileStructure.Encode(&outputBuffer); err != nil {
 		log.Fatalln("can't save the current configurationFile structure")
 	}
@@ -197,66 +190,59 @@ func main() {
 	/*pathCmd is a subcommand to get the path of a given git repository.
 	 *This subcommand is useful to change directory, like `cd $(goyave path mygitrepo)`
 	 */
-	// var pathCmd = &cobra.Command{
-	// 	Use:   "path",
-	// 	Short: "Get the path of a given repository, if this one exists",
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		if len(args) == 0 {
-	// 			log.Fatalln("Needs a repository name!")
-	// 		}
-	// 		repo := args[0]
-	// 		if err := configurationFileStructure.Extract(true); err != nil {
-	// 			traces.ErrorTracer.Fatalln(err)
-	// 		}
-	// 		repoPath := configurationFileStructure.GetPathFromRepository(repo)
-	// 		if repoPath != "" {
-	// 			fmt.Println(repoPath)
-	// 		} else {
-	// 			log.Fatalf("the repository %s does not exists\n", repo)
-	// 		}
-	// 	},
-	// }
+	var pathCmd = &cobra.Command{
+		Use:   "path",
+		Short: "Get the path of a given repository, if this one exists",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				log.Fatalln("Needs a repository name!")
+			}
+			repo := args[0]
+			repoPath, found := configurationFileStructure.GetPath(repo)
+			if !found {
+				log.Fatalf("repository %s not found\n", repo)
+			} else {
+				fmt.Println(repoPath)
+			}
+		},
+	}
 
 	/*stateCmd is a subcommand to list the state of each local git repository.
 	 */
-	// var stateCmd = &cobra.Command{
-	// 	Use:     "state",
-	// 	Example: "goyave state\ngoyave state myRepositoryName\ngoyave state myRepositoryName1 myRepositoryName2",
-	// 	Short:   "Get the state of each local visible git repository",
-	// 	Long:    "Check only visible git repositories.\nIf some repository names have been setted, goyave will only check those repositories, otherwise it checks all visible repositories of your system.",
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		if err := configurationFileStructure.Extract(true); err != nil {
-	// 			traces.ErrorTracer.Fatalln(err)
-	// 		}
-	// 		var gitStructs []configurationFile.GitRepository
-	// 		if len(args) == 0 {
-	// 			gitStructs = configurationFileStructure.VisibleRepositories
-	// 		} else {
-	// 			// Sort visible repositories by name
-	// 			sort.Sort(configurationFile.ByName(configurationFileStructure.VisibleRepositories))
-	// 			repositoriesListLength := len(configurationFileStructure.VisibleRepositories)
-	// 			// Looking for given repository names - if the looking one does not exists, let the function prints a warning message.
-	// 			for _, repositoryName := range args {
-	// 				repositoryIndex := sort.Search(repositoriesListLength, func(i int) bool { return configurationFileStructure.VisibleRepositories[i].Name >= repositoryName })
-	// 				if repositoryIndex != repositoriesListLength {
-	// 					gitStructs = append(gitStructs, configurationFileStructure.VisibleRepositories[repositoryIndex])
-	// 				} else {
-	// 					traces.WarningTracer.Printf("%s cannot be found in your visible repositories!\n", repositoryName)
-	// 				}
-	// 			}
-	// 		}
-	// 		var wg sync.WaitGroup
-	// 		for _, gitStruct := range gitStructs {
-	// 			wg.Add(1)
-	// 			go func(gitStruct configurationFile.GitRepository) {
-	// 				defer wg.Done()
-	// 				gitStruct.Init(gitStruct.Path)
-	// 				gitStruct.GitObject.Status()
-	// 			}(gitStruct)
-	// 		}
-	// 		wg.Wait()
-	// 	},
-	// }
+	var stateCmd = &cobra.Command{
+		Use:     "state",
+		Example: "goyave state\ngoyave state myRepositoryName\ngoyave state myRepositoryName1 myRepositoryName2",
+		Short:   "Get the state of each local visible git repository",
+		Long:    "Check only visible git repositories.\nIf some repository names have been setted, goyave will only check those repositories, otherwise it checks all visible repositories of your system.",
+		Run: func(cmd *cobra.Command, args []string) {
+			var paths []string
+			// Append repositories to check
+			if len(args) == 0 {
+				for _, p := range configurationFileStructure.VisibleRepositories {
+					paths = append(paths, p)
+				}
+			} else {
+				for _, repository := range args {
+					repoPath, ok := configurationFileStructure.VisibleRepositories[repository]
+					if ok {
+						paths = append(paths, repoPath)
+					} else {
+						traces.WarningTracer.Printf("%s cannot be found in your visible repositories\n", repository)
+					}
+				}
+			}
+			var wg sync.WaitGroup
+			for _, repository := range paths {
+				wg.Add(1)
+				go func(repoPath string) {
+					defer wg.Done()
+					cGitObj := gitManip.New(repoPath)
+					cGitObj.Status()
+				}(repository)
+			}
+			wg.Wait()
+		},
+	}
 
 	/*switchCmd is a subcommand to switch the visibility of the current git repository.
 	 */
@@ -308,7 +294,7 @@ func main() {
 
 	// rootCmd.AddCommand(crawlCmd, pathCmd, stateCmd)
 
-	rootCmd.AddCommand(initCmd, crawlCmd)
+	rootCmd.AddCommand(crawlCmd, initCmd, pathCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
