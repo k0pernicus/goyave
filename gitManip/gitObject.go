@@ -96,21 +96,6 @@ func GetRemoteURL(path string) string {
 	return originRemote.Url()
 }
 
-/*GetRemoteURL returns the URL from the Origin remote branch.
- *If the branch can't be reached, the function returns an empty string.
- */
-func (g *GitObject) GetRemoteURL() string {
-	if g.isAccessible() {
-		remoteCollection := g.repository.Remotes
-		originRemote, err := remoteCollection.Lookup("origin")
-		if err == nil {
-			return originRemote.Url()
-		}
-		return err.Error()
-	}
-	return "Not found!"
-}
-
 /*isAccesible returns the information that is the current git repository is existing or not.
  *This method returns a boolean value: true if the git repository is still accesible (still exists), or false if not.
  */
@@ -194,17 +179,4 @@ func (g *GitObject) printChanges() error {
 	}
 	fmt.Print(buffer.String())
 	return nil
-}
-
-/*List lists the path and the accessibility of a list of git repositories
- */
-func List(repositories *[]GitObject) {
-	for _, object := range *repositories {
-		fmt.Printf("* %s ", object.path)
-		if object.isAccessible() {
-			fmt.Println(color.GreenString(" [accessible]"))
-		} else {
-			fmt.Println(color.RedString(" [not accessible]"))
-		}
-	}
 }
