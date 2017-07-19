@@ -17,34 +17,7 @@ In order to get updates on repositories you are interested in, `goyave` uses a b
 
 The configuration file is available at `$HOME/.goyave`.
 
-This is the structure of this configuration file:
-
-```TOML
-# The name of the user - typically the name of your session account
-Author = yourSessionAccount
-
-# Some local informations
-[local]
-    # The target to store new git repositories
-    # Available properties are:
-    # * "VISIBLE" - Store each new git repository as a _VISIBLE_ repository
-    # * "HIDDEN" - Store each new git repository as a _HIDDEN_ one
-    DefaultTarget = "VISIBLE"
-    # The group you are using to perform some actions - typically, your hostname
-    Group = yourLocalHostname
-
-# A list of repositories
-# The repository may be visible or hidden, according to the group configuration
-[[repositories]]
-    Name = repositoryName
-    URL  = remoteURL
-    [[repositories.local]]
-        Path = theLocalPath
-
-[[group]]
-    Name = aLocalHostname
-    VisibleRepositories = [repo1.Name, repo2.Name, etc...]
-```
+You can find an example of a goyave configuration file [here](https://github.com/k0pernicus/goyave_conf).
 
 ### How to use it?
 
