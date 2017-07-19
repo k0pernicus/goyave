@@ -96,27 +96,6 @@ func Default(author string, hostname string) *ConfigurationFile {
 	}
 }
 
-/*Process initializes useful fields in the data structure
- */
-func (c *ConfigurationFile) Process() error {
-	// If the configuration file is new, initialize the map and finish here
-	if c.Repositories == nil {
-		c.Repositories = make(map[string]GitRepository)
-		return nil
-	}
-	// Otherwise, initialize useful fields
-	hostname := utils.GetLocalhost()
-	vrepositories, ok := c.Groups[hostname]
-	if !ok {
-		return fmt.Errorf("the hostname %s has not been found - please to launch 'crawl' before", hostname)
-	}
-	c.VisibleRepositories = make(VisibleRepositories)
-	for _, repository := range vrepositories {
-		c.VisibleRepositories[repository] = c.Repositories[repository].Paths[hostname].Path
-	}
-	return nil
-}
-
 /*AddRepository append the given repository to the list of local repositories, if it does not exists
  */
 func (c *ConfigurationFile) AddRepository(path, target string) error {
@@ -146,6 +125,39 @@ func (c *ConfigurationFile) AddRepository(path, target string) error {
 			hostname: cgroup,
 		},
 		URL: gitManip.GetRemoteURL(path),
+	}
+	// If the user wants to add automatically new repositories as repositories to "follow", change
+	// his flag as a "visible" repository
+	if target == consts.VisibleFlag {
+		c.Groups[hostname] = append(c.Groups[hostname], name)
+	}
+	return nil
+}
+
+/*GetPath returns the local path file, for a given repository
+ */
+func (c *ConfigurationFile) GetPath(repository string) (string, bool) {
+	gobj, ok := c.VisibleRepositories[repository]
+	return gobj, ok
+}
+
+/*Process initializes useful fields in the data structure
+ */
+func (c *ConfigurationFile) Process() error {
+	// If the configuration file is new, initialize the map and finish here
+	if c.Repositories == nil {
+		c.Repositories = make(map[string]GitRepository)
+		return nil
+	}
+	// Otherwise, initialize useful fields
+	hostname := utils.GetLocalhost()
+	vrepositories, ok := c.Groups[hostname]
+	if !ok {
+		return fmt.Errorf("the hostname %s has not been found - please to launch 'crawl' before", hostname)
+	}
+	c.VisibleRepositories = make(VisibleRepositories)
+	for _, repository := range vrepositories {
+		c.VisibleRepositories[repository] = c.Repositories[repository].Paths[hostname].Path
 	}
 	return nil
 }
