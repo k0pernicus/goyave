@@ -2,6 +2,8 @@
  */
 package consts
 
+// DefaultUserName is a constant to define a new user, if the
+// user local name can't be found
 const DefaultUserName = "Thor"
 
 // VisibleFlag is the constant given for a visible repository
@@ -15,13 +17,3 @@ const ConfigurationFileName = ".goyave"
 
 // GitFileName is the name of the git directory, in a git repository
 const GitFileName = ".git"
-
-////////////////
-//// ERRORS ////
-////////////////
-
-// RepositoryAlreadyExists is an error that raises when an existing path repository is in a list
-const RepositoryAlreadyExists = "REPOSITORY_ALREADY_EXISTS"
-
-// ItemIsNotIsSlice is an error that raises when an searched item is not in the given slice
-const ItemIsNotInSlice = "ITEM_IS_NOT_IN_SLICE"
