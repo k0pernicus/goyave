@@ -33,7 +33,7 @@ func GetConfigurationFileContent(filePointer *os.File, bytesArray *[]byte) {
 	if err != nil || fileState.Size() == 0 {
 		traces.WarningTracer.Println("No (or empty) configuration file - creating default one...")
 		var fileBuffer bytes.Buffer
-		cLocalhost := utils.GetLocalhost()
+		cLocalhost := utils.GetHostname()
 		cUser, err := user.Current()
 		var cUserName string
 		if err != nil {
@@ -100,7 +100,7 @@ func Default(author string, hostname string) *ConfigurationFile {
  */
 func (c *ConfigurationFile) AddRepository(path, target string) error {
 	name := filepath.Base(path)
-	hostname := utils.GetLocalhost()
+	hostname := utils.GetHostname()
 	c.locker.Lock()
 	defer c.locker.Unlock()
 	robj, ok := c.Repositories[name]
@@ -150,7 +150,7 @@ func (c *ConfigurationFile) Process() error {
 		return nil
 	}
 	// Otherwise, initialize useful fields
-	hostname := utils.GetLocalhost()
+	hostname := utils.GetHostname()
 	vrepositories, ok := c.Groups[hostname]
 	if !ok {
 		return fmt.Errorf("the hostname %s has not been found - please to launch 'crawl' before", hostname)
