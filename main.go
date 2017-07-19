@@ -126,7 +126,9 @@ func main() {
 				wg.Add(1)
 				go func(gitPath string) {
 					defer wg.Done()
-					configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget)
+					if !utils.IsGitRepository(gitPath) {
+						configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget)
+					}
 				}(gitPath)
 			}
 			wg.Wait()
