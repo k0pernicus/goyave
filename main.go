@@ -90,27 +90,24 @@ func main() {
 
 	/*addCmd is a subcommand to add the current working directory as a VISIBLE one
 	 */
-	// var addCmd = &cobra.Command{
-	// 	Use:   "add",
-	// 	Short: "Add the current path as a VISIBLE repository",
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		// Get the path where the command has been executed
-	// 		currentDir, err := os.Getwd()
-	// 		if err != nil {
-	// 			log.Fatalln("There was a problem retrieving the current directory")
-	// 		}
-	// 		if !utils.IsGitRepository(currentDir) {
-	// 			log.Fatalf("%s is not a git repository!\n", currentDir)
-	// 		}
-	// 		if err := configurationFileStructure.Extract(); err != nil {
-	// 			traces.ErrorTracer.Fatalln(err)
-	// 		}
-	// 		// If the path is/contains a .git directory, add this one as a VISIBLE repository
-	// 		if err := configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag); err != nil {
-	// 			traces.WarningTracer.Printf("[%s] %s\n", currentDir, err)
-	// 		}
-	// 	},
-	// }
+	var addCmd = &cobra.Command{
+		Use:   "add",
+		Short: "Add the current path as a VISIBLE repository",
+		Run: func(cmd *cobra.Command, args []string) {
+			// Get the path where the command has been executed
+			currentDir, err := os.Getwd()
+			if err != nil {
+				log.Fatalln("There was a problem retrieving the current directory")
+			}
+			if !utils.IsGitRepository(currentDir) {
+				log.Fatalf("%s is not a git repository!\n", currentDir)
+			}
+			// If the path is/contains a .git directory, add this one as a VISIBLE repository
+			if err := configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag); err != nil {
+				traces.WarningTracer.Printf("[%s] %s\n", currentDir, err)
+			}
+		},
+	}
 
 	/*crawlCmd is a subcommand to crawl your hard drive in order to get and save new git repositories
 	 */
@@ -294,7 +291,7 @@ func main() {
 
 	// rootCmd.AddCommand(crawlCmd, pathCmd, stateCmd)
 
-	rootCmd.AddCommand(crawlCmd, initCmd, pathCmd, stateCmd)
+	rootCmd.AddCommand(addCmd, crawlCmd, initCmd, pathCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
