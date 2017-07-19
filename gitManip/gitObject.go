@@ -7,6 +7,7 @@ import (
 
 	"bytes"
 
+	"github.com/k0pernicus/goyave/traces"
 	git "gopkg.in/libgit2/git2go.v25"
 )
 
@@ -57,6 +58,7 @@ type GitObject struct {
  */
 func New(path string) *GitObject {
 	r, err := git.OpenRepository(path)
+	fmt.Println(path)
 	return &GitObject{accessible: err, path: path, repository: *r}
 }
 
@@ -88,7 +90,7 @@ func GetRemoteURL(path string) string {
 	remoteCollection := r.Remotes
 	originRemote, err := remoteCollection.Lookup("origin")
 	if err != nil {
-		fmt.Println("Cannot lookup to origin")
+		traces.WarningTracer.Printf("can't lookup origin remote URL for %s", path)
 		return ""
 	}
 	return originRemote.Url()
