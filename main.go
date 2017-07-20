@@ -48,9 +48,7 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
 	if _, err = toml.Decode(string(bytesArray[:]), configurationFileStructure); err != nil {
 		log.Fatalln(err)
 	}
-	if err := configurationFileStructure.Process(); err != nil {
-		log.Fatalln(err)
-	}
+	configurationFileStructure.Process()
 }
 
 /*kill saves the current state of the configuration structure in the configuration file
@@ -100,7 +98,7 @@ func main() {
 			if err != nil {
 				log.Fatalln("There was a problem retrieving the current directory")
 			}
-			if !utils.IsGitRepository(currentDir) {
+			if utils.IsGitRepository(currentDir) {
 				log.Fatalf("%s is not a git repository!\n", currentDir)
 			}
 			// If the path is/contains a .git directory, add this one as a VISIBLE repository
@@ -127,7 +125,7 @@ func main() {
 				wg.Add(1)
 				go func(gitPath string) {
 					defer wg.Done()
-					if !utils.IsGitRepository(gitPath) {
+					if utils.IsGitRepository(gitPath) {
 						configurationFileStructure.AddRepository(gitPath, configurationFileStructure.Local.DefaultTarget)
 					}
 				}(gitPath)
