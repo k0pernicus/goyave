@@ -3,11 +3,26 @@ A local console-based git projects manager
 
 ### General
 
-`goyave` is a small and simple command-line tool to interact with your local git repositories, in order to keep an eye on them.   
-It creates and updates a TOML file (in your `$HOME`), to perform the speed-up of interactions.
+`goyave` is a simple command-line tool to interact (**read only**) with your local git repositories, just in order to keep an eye on them.  
+This tool creates and updates a TOML file (in your `$HOME` directory), to speed-up interactions and to perform back-ups if you need.
 
-`goyave` allows you to get some informations about _dirty_ git repositories in your system (a _dirty_ repository is a repository that contains non-commited files, modified files, etc...).   
-In order to get updates on repositories you are interested in, `goyave` uses a binary system that consists in telling him what are the repositories you are interested for (in this project, we call them _VISIBLE_ repositories).
+### VISIBLE / HIDDEN ?
+
+`goyave` allows you to get some informations about _dirty_ git repositories in your system (a _dirty_ repository is a repository that contains non-commited files, modified files, etc...), via the `state` command.   
+In order to get updates on repositories you are interested in, `goyave` uses a binary system:
+* repositories you are interested in are considered as **VISIBLE**,
+* repositories you want to ignore are considered as **HIDDEN**.
+
+You can modify the default behaviour of `goyave` in your configuration file.
+
+### Commands
+
+* `goyave init` -> Command to create an empty configuration file if this one does not exists on your system  
+* `goyave add` -> Command to add the current directory in the local configuration file  
+* `goyave crawl` -> Command to crawl your hard drive to find git repositories - those repositories will be classified as **VISIBLE** or **HIDDEN** according to the local system configuration  
+* `goyave load` -> Command to load an existing configuration file, to retrieve a previous system (for example, to retrieve a work system after an hard reboot)  
+* `goyave path` -> Command to get the path of a local git repository (useful if your repositories are spread in your file system)
+* `goyave state` -> Command to get the current state of your **VISIBLE** git repositories
 
 ### Screenshot
 
@@ -21,13 +36,22 @@ You can find an example of a goyave configuration file [here](https://github.com
 
 ### How to use it?
 
-* `go get github.com/k0pernicus/goyave`
-* `goyave crawl` (needed!)
-* `goyave state`
+#### If you are using goyave the first time
+
+1.  `go get github.com/k0pernicus/goyave`
+2. *Optional*: The default behavior of `goyave` is set to **VISIBLE** - you can change it before crawling your hard drive
+3. `goyave crawl` (recommended!)
+4. `goyave state`
+
+#### If you are using goyave using an existing configuration file, on the same machine
+
+1. `go get github.com/k0pernicus/goyave`
+2. `mv my_configuration_file ~/.goyave`
+3. `goyave load`
 
 ### Troubleshootings
 
-* Please to make sure that the 25th version of [libgit2](https://libgit2.github.com/) is installed on your computer.
+* Please to make sure you are using the 25th version of [libgit2](https://libgit2.github.com/)!
 
 ### LICENSE
 
