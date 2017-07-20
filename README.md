@@ -1,12 +1,10 @@
 # goyave
-A local console-based git projects manager
-
-### General
+A supervisor for git projects
 
 _Goyave_ is a simple command-line tool to interact (**read only**) with your local git repositories, just in order to keep an eye on them.  
 This tool creates and updates a TOML file (in your `$HOME` directory), to speed-up interactions and to perform back-ups if you need.
 
-### VISIBLE / HIDDEN ?
+## Visible / Hidden ?
 
 _Goyave_ allows you to get some informations about _dirty_ git repositories in your system (a _dirty_ repository is a repository that contains non-commited files, modified files, etc...), via the `state` command.   
 In order to get updates on repositories you are interested in, _Goyave_ uses a binary system:
@@ -15,7 +13,7 @@ In order to get updates on repositories you are interested in, _Goyave_ uses a b
 
 You can modify the default behaviour of _Goyave_ in your configuration file.
 
-### Commands
+## Commands
 
 * `goyave init` -> Command to create an empty configuration file if this one does not exists on your system  
 * `goyave add` -> Command to add the current directory in the local configuration file  
@@ -24,17 +22,16 @@ You can modify the default behaviour of _Goyave_ in your configuration file.
 * `goyave path` -> Command to get the path of a local git repository (useful if your repositories are spread in your file system)
 * `goyave state` -> Command to get the current state of your **VISIBLE** git repositories
 
-### Screenshot
+## The configuration file
+
+The configuration file is available at `$HOME/.goyave`.  
+You can find, for example, my goyave configuration file [here](https://github.com/k0pernicus/goyave_conf).
+
+## Screenshot
 
 ![Simple screenshot](./pictures/goyave.png)
 
-### The configuration file
-
-The configuration file is available at `$HOME/.goyave`.
-
-You can find an example of a goyave configuration file [here](https://github.com/k0pernicus/goyave_conf).
-
-### How to use it?
+## How to use it?
 
 #### If you are using goyave the first time
 
@@ -49,17 +46,27 @@ You can find an example of a goyave configuration file [here](https://github.com
 2. `mv my_configuration_file ~/.goyave`
 3. `goyave load`
 
-### Contributing
+## Contributing
 
 _Goyave_ is my first Go project, and I still nead to learn **a lot** ;-)  
-If you find bugs, want to improve the code and/or documentation, or add new features, please to create an issue and the associated pull request if you modified anything! :-)  
+If you find bugs, want to improve the code and/or documentation, or add new features, please to create an issue and the associated pull request if you modified anything! :-)
+
+If you want to create a pull request, this is the procedure to make it great:
+
+* create an issue to explain the problem you encountered (except for typo),
+* fork the project,
+* create a local branch to make changes (from the `devel` branch),
+* test your changes,
+* create a pull request (please compare it with the `devel` branch),
+* explain your changes,
+* submit !
 
 Thank you for your interest in contributing to _Goyave_ ! :-D
 
-### Troubleshootings
+## Troubleshootings
 
 * Please to make sure you are using the 25th version of [libgit2](https://libgit2.github.com/)!
 
-### LICENSE
+## LICENSE
 
 MIT License
