@@ -239,56 +239,6 @@ func main() {
 		},
 	}
 
-	/*switchCmd is a subcommand to switch the visibility of the current git repository.
-	 */
-	// var switchCmd = &cobra.Command{
-	// 	Use:   "switch",
-	// 	Short: "Switch the visibility of the current git repository (given by the current path)",
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		// Get the path where the command has been executed
-	// 		currentDir, err := os.Getwd()
-	// 		if err != nil {
-	// 			log.Fatalln("there was a problem retrieving the current directory")
-	// 		}
-	// 		if err := configurationFileStructure.Extract(true); err != nil {
-	// 			traces.ErrorTracer.Fatalln(err)
-	// 		}
-	// 		// Recognizing the repository in the configuration file
-	// 		repositoryName := filepath.Base(currentDir)
-	// 		localRepositories := configurationFileStructure.Repositories
-	// 		repositoryPathIndex := utils.SliceIndex(len(localRepositories), func(i int) bool { return localRepositories[i].Name == repositoryName })
-	// 		if repositoryPathIndex == -1 {
-	// 			log.Fatalf("the repository '%s' does not exists in the configuration file", filepath.Base(currentDir))
-	// 			os.Exit(2)
-	// 		}
-	// 		repositoryGroupIndex := utils.SliceIndex(len(localRepositories[repositoryPathIndex].Paths), func(i int) bool { return localRepositories[repositoryPathIndex].Paths[i].Path == currentDir })
-	// 		if repositoryGroupIndex == -1 {
-	// 			log.Fatalf("the file path '%s' does not exists in the configuration file", currentDir)
-	// 			os.Exit(2)
-	// 		}
-	// 		// The repository is now recognized
-	// 		currentGroupName := utils.GetLocalhost()
-	// 		groupIndex := utils.SliceIndex(len(configurationFileStructure.Groups), func(i int) bool { return configurationFileStructure.Groups[i].Name == currentGroupName })
-	// 		if groupIndex == -1 {
-	// 			log.Fatalln("your localhost is not recognized, please to crawl first")
-	// 			os.Exit(2)
-	// 		}
-	// 		visibleRepositories := configurationFileStructure.VisibleRepositories
-	// 		// visibleRepositories := configurationFileStructure.Groups[groupIndex].VisibleRepositories
-	// 		repositoryIndex := utils.SliceIndex(len(visibleRepositories), func(i int) bool { return visibleRepositories[i].Name == repositoryName })
-	// 		if repositoryIndex == -1 {
-	// 			configurationFileStructure.AddRepository(currentDir, consts.VisibleFlag)
-	// 			fmt.Printf("The repository %s has been added!\n", repositoryName)
-	// 		} else {
-	// 			configurationFileStructure.VisibleRepositories = append(visibleRepositories[:repositoryIndex], visibleRepositories[repositoryIndex+1:]...)
-	// 			fmt.Printf("The repository %s has been removed!\n", repositoryName)
-	// 		}
-	// 		fmt.Println(configurationFileStructure.VisibleRepositories)
-	// 	},
-	// }
-
-	// rootCmd.AddCommand(crawlCmd, pathCmd, stateCmd)
-
 	rootCmd.AddCommand(addCmd, crawlCmd, initCmd, loadCmd, pathCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
