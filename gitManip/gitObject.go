@@ -58,7 +58,6 @@ type GitObject struct {
  */
 func New(path string) *GitObject {
 	r, err := git.OpenRepository(path)
-	fmt.Println(path)
 	return &GitObject{accessible: err, path: path, repository: *r}
 }
 
