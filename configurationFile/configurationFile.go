@@ -11,8 +11,6 @@ import (
 	"os"
 	"os/user"
 
-	"fmt"
-
 	"path/filepath"
 
 	"sync"
@@ -143,23 +141,22 @@ func (c *ConfigurationFile) GetPath(repository string) (string, bool) {
 
 /*Process initializes useful fields in the data structure
  */
-func (c *ConfigurationFile) Process() error {
+func (c *ConfigurationFile) Process() {
 	// If the configuration file is new, initialize the map and finish here
 	if c.Repositories == nil {
 		c.Repositories = make(map[string]GitRepository)
-		return nil
 	}
 	// Otherwise, initialize useful fields
 	hostname := utils.GetHostname()
 	vrepositories, ok := c.Groups[hostname]
 	if !ok {
-		return fmt.Errorf("the hostname %s has not been found - please to launch 'crawl' before", hostname)
+		traces.InfoTracer.Printf("creating new group '%s'\n", hostname)
+		c.Groups[hostname] = []string{}
 	}
 	c.VisibleRepositories = make(VisibleRepositories)
 	for _, repository := range vrepositories {
 		c.VisibleRepositories[repository] = c.Repositories[repository].Paths[hostname].Path
 	}
-	return nil
 }
 
 /*VisibleRepositories is a map structure to store, for each repository name (and the hostname), the associated path
