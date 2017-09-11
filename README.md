@@ -65,7 +65,13 @@ Thank you for your interest in contributing to _Goyave_ ! :-D
 
 ## Troubleshootings
 
-* Please to make sure you are using the 25th version of [libgit2](https://libgit2.github.com/)!
+* `goyave` supports only `libgit2 v0.26`. In order to get this version, please to make those steps:
+    *   `go get -d github.com/libgit2/git2go # download the code`
+    *   `cd $GOPATH/src/github.com/libgit2/git2go`
+    *   `git submodule update --init # init submodules`
+    *   `make install # install the current version of libgit2 and git2go on your file system`
+    *   `cd $GOPATH/src/github.com/k0pernicus/goyave`
+    *   `go install # install goyave`
 
 ## LICENSE
 
