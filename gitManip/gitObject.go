@@ -151,6 +151,14 @@ func (g *GitObject) printChanges() error {
 	if err != nil {
 		return err
 	}
+	headDetached, err := g.repository.IsHeadDetached()
+	if err != nil {
+		return err
+	}
+	if headDetached {
+		outputHead := fmt.Sprintf("%s", color.RedString("\t/!\\ The repository's HEAD is detached! /!\\\n"))
+		buffer.WriteString(outputHead)
+	}
 	if numDeltas > 0 {
 		buffer.WriteString(fmt.Sprintf("%s %s\t[%d modification(s)]\n", color.RedString("✘"), g.path, numDeltas))
 		for i := 0; i < numDeltas; i++ {
