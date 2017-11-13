@@ -161,10 +161,12 @@ func (g *GitObject) printChanges() error {
 	if err != nil {
 		return err
 	}
+	
 	numDeltas, err := diff.NumDeltas()
 	if err != nil {
 		return err
 	}
+	
 	headDetached, err := g.repository.IsHeadDetached()
 	if err != nil {
 		return err
@@ -173,8 +175,9 @@ func (g *GitObject) printChanges() error {
 		outputHead := fmt.Sprintf("%s", color.RedString("\t/!\\ The repository's HEAD is detached! /!\\\n"))
 		buffer.WriteString(outputHead)
 	}
+	
 	if numDeltas > 0 {
-		buffer.WriteString(fmt.Sprintf("%s %s\t[%d modification(s)]\n", color.RedString("✘"), g.path, numDeltas))
+		buffer.WriteString(fmt.Sprintf("%s %9s\t[%d modification(s)]\n", color.RedString("✘"), g.path, numDeltas))
 		for i := 0; i < numDeltas; i++ {
 			delta, _ := diff.GetDelta(i)
 			currentStatus := delta.Status
@@ -198,18 +201,17 @@ func (g *GitObject) printChanges() error {
 	} else {
 		buffer.WriteString(fmt.Sprintf("%s %s\n", color.GreenString("✔"), g.path))
 	}
-	repository_head, err := g.repository.Head()
+	
+	commitsAhead, commitsBehind, err := g.getCommitsAheadBehind()
 	if err == nil {
-		repository_id := repository_head.Target()
-		commits_ahead, commits_behind, err := g.repository.AheadBehind(repository_id, repository_id)
-		fmt.Printf("%d commits ahead!\n", commits_ahead)
-		fmt.Printf("%d commits behind!\n", commits_behind)
-		if err != nil {
-			buffer.WriteString(fmt.Sprintf("%s", color.RedString("\tAn error occured checking the ahead/behind commits...\n")))
-		} else if commits_ahead != 0 {
-			buffer.WriteString(fmt.Sprintf("\tYou need to push the last modifications!\n"))
+		if commitsAhead != 0 {
+			buffer.WriteString(fmt.Sprintf("\t%s %d commits AHEAD - You need to push your modifications soon\n", color.RedString("⟳"), commitsAhead))
+		}
+		if commitsBehind != 0 {
+			buffer.WriteString(fmt.Sprintf("\t%s %d commits BEHIND - You need to pull the modifications from your remote branch soon\n", color.RedString("⟲"), commitsBehind))
 		}
 	}
+	
 	fmt.Print(buffer.String())
 	return nil
 }
