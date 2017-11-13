@@ -138,6 +138,20 @@ func (g *GitObject) getDiffWithWT() (*git.Diff, error) {
 	return diff, nil
 }
 
+func (g *GitObject) getCommitsAheadBehind() (int, int, error) {
+	repositoryHead, err := g.repository.Head()
+	// Check upstream branch head
+	cBranch := repositoryHead.Branch()
+	cReference, err := cBranch.Upstream()
+	if err != nil {
+		return -1, -1, err
+	}
+	cReferenceTarget := cReference.Target()
+	cRepositoryTarget := repositoryHead.Target()
+	commitsAhead, commitsBehind, err := g.repository.AheadBehind(cRepositoryTarget, cReferenceTarget)
+	return commitsAhead, commitsBehind, err
+}
+
 /*printChanges prints out all changes for the current git repository.
  *If there is an error processing the request, it returns this one.
  */
