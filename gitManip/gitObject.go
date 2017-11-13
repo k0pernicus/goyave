@@ -184,6 +184,16 @@ func (g *GitObject) printChanges() error {
 	} else {
 		buffer.WriteString(fmt.Sprintf("%s %s\n", color.GreenString("✔"), g.path))
 	}
+	repository_head, err := g.repository.Head()
+	if err == nil {
+		repository_id := repository_head.Target()
+		commits_ahead, _, err := g.repository.AheadBehind(repository_id, repository_id)
+		if err != nil {
+			buffer.WriteString(fmt.Sprintf("%s", color.RedString("\tAn error occured checking the ahead/behind commits...\n")))
+		} else if commits_ahead != 0 {
+			buffer.WriteString(fmt.Sprintf("\tYou need to push the last modifications!\n"))
+		}
+	}
 	fmt.Print(buffer.String())
 	return nil
 }
