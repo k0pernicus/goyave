@@ -205,10 +205,10 @@ func (g *GitObject) printChanges() error {
 	commitsAhead, commitsBehind, err := g.getCommitsAheadBehind()
 	if err == nil {
 		if commitsAhead != 0 {
-			buffer.WriteString(fmt.Sprintf("\t%s %d commits AHEAD - You need to push your modifications soon\n", color.RedString("⟳"), commitsAhead))
+			buffer.WriteString(fmt.Sprintf("\t%s %d commits AHEAD - Soon, you will need to push your modifications\n", color.RedString("⟳"), commitsAhead))
 		}
 		if commitsBehind != 0 {
-			buffer.WriteString(fmt.Sprintf("\t%s %d commits BEHIND - You need to pull the modifications from your remote branch soon\n", color.RedString("⟲"), commitsBehind))
+			buffer.WriteString(fmt.Sprintf("\t%s %d commits BEHIND - Soon, you will need to pull the modifications from the remote branch\n", color.RedString("⟲"), commitsBehind))
 		}
 	}
 	
