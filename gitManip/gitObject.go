@@ -187,7 +187,9 @@ func (g *GitObject) printChanges() error {
 	repository_head, err := g.repository.Head()
 	if err == nil {
 		repository_id := repository_head.Target()
-		commits_ahead, _, err := g.repository.AheadBehind(repository_id, repository_id)
+		commits_ahead, commits_behind, err := g.repository.AheadBehind(repository_id, repository_id)
+		fmt.Printf("%d commits ahead!\n", commits_ahead)
+		fmt.Printf("%d commits behind!\n", commits_behind)
 		if err != nil {
 			buffer.WriteString(fmt.Sprintf("%s", color.RedString("\tAn error occured checking the ahead/behind commits...\n")))
 		} else if commits_ahead != 0 {
