@@ -33,13 +33,13 @@ func initialize(configurationFileStructure *configurationFile.ConfigurationFile)
 	// Get the user home directory
 	userHomeDir = utils.GetUserHomeDir()
 	if len(userHomeDir) == 0 {
-		log.Fatalf("cant get the user home dir\n")
+		log.Fatalf("can't get the user home dir\n")
 	}
 	// Set the configuration path file
 	configurationFilePath = path.Join(userHomeDir, consts.ConfigurationFileName)
 	filePointer, err := os.OpenFile(configurationFilePath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
-		log.Fatalf("cant open the file %s, due to error '%s'\n", configurationFilePath, err)
+		log.Fatalf("can't open the file %s, due to error '%s'\n", configurationFilePath, err)
 	}
 	defer filePointer.Close()
 	var bytesArray []byte
