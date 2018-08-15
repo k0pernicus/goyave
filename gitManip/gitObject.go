@@ -129,7 +129,7 @@ func (g *GitObject) getDiffWithWT() (*git.Diff, error) {
 	if err != nil {
 		return nil, err
 	}
-	defaultDiffOptions.Flags = defaultDiffOptions.Flags | git.DiffIncludeUntracked | git.DiffIncludeTypeChange
+	defaultDiffOptions.Flags = defaultDiffOptions.Flags | git.DiffNormal | git.DiffIncludeUntracked | git.DiffIncludeTypeChange
 	// Check the difference between the working directory and the index
 	diff, err := g.repository.DiffIndexToWorkdir(currentIndex, &defaultDiffOptions)
 	if err != nil {
