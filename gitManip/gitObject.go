@@ -8,7 +8,7 @@ import (
 	"bytes"
 
 	"github.com/k0pernicus/goyave/traces"
-	git "gopkg.in/libgit2/git2go.v26"
+	git "gopkg.in/libgit2/git2go.v27"
 )
 
 /*Map to match the RepositoryState enum type with a string
