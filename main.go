@@ -80,13 +80,6 @@ func main() {
 		},
 	}
 
-	var initCmd = &cobra.Command{
-		Use:   "init",
-		Short: "Init",
-		Run: func(cmd *cobra.Command, args []string) {
-		},
-	}
-
 	/*addCmd is a subcommand to add the current working directory as a VISIBLE one
 	 */
 	var addCmd = &cobra.Command{
@@ -237,7 +230,7 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(addCmd, crawlCmd, initCmd, loadCmd, pathCmd, stateCmd)
+	rootCmd.AddCommand(addCmd, crawlCmd, loadCmd, pathCmd, stateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
