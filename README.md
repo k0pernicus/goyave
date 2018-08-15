@@ -65,7 +65,7 @@ Thank you for your interest in contributing to _Goyave_ ! :-D
 
 ## Troubleshootings
 
-* `goyave` supports only `libgit2 v0.26`. In order to get this version, please to make those steps:
+* `goyave` supports only `libgit2 v0.27`. In order to get this version, please to make those steps:
     *   `go get -d github.com/libgit2/git2go # download the code`
     *   `cd $GOPATH/src/github.com/libgit2/git2go`
     *   `git submodule update --init # init submodules`
